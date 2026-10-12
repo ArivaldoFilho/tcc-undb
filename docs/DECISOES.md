@@ -18,14 +18,12 @@ Atualizado a cada decisão nova; as mais recentes ficam no fim de cada seção.
 | P4 | Qual é a política da UNDB para uso de IA, e como declarar esse uso? | Coordenação | 12/10/2026 |
 | P5 | Remover o segmentador de Semestre do dashboard antes de congelar (ver D2.6)? | Autor | 12/10/2026 |
 | P6 | Congelar o dashboard e registrar a data | Autor | 12/10/2026 |
-| P7 | Escolher de 16 a 20 das 26 perguntas candidatas | Autor | 12/10/2026 |
 | P8 | Conferência dos gabaritos pelo orientador; revisão das perguntas do tipo C por uma pessoa de fora | Orientador e revisor externo | 12/10/2026 |
 | P9 | Conferir a licença da base Olist no Kaggle | Autor | 12/10/2026 |
 | P10 | Ler a adaptação brasileira do SUS e ajustar os itens da página do estudo | Autor | 12/10/2026 |
 | P11 | Preencher e revisar o termo de consentimento (`config/estudo.json`, `static/estudo.html`) | Autor e orientador | 12/10/2026 |
 | P12 | Como o Power BI foi conectado ao Supabase: certificado raiz instalado ou criptografia desligada? Registrar a escolha | Autor | 12/10/2026 |
 | P13 | Cenários já escritos (D6.20). Falta escolher as perguntas do estudo depois da Fase 5, priorizando as que a IA às vezes erra | Autor | 12/10/2026 |
-| P14 | Acrescentar perguntas-armadilha ao banco antes de congelar (junção itens x pagamentos, período relativo, ticket com ou sem frete, várias etapas), para evitar o efeito teto da IA (ver D9.3) | Autor | 12/10/2026 |
 | P15 | Medir o esforço técnico como esforço de adaptação: para cada pergunta C, o que o painel precisaria mudar (medida, visual, modelo) e o que o Indaga precisaria mudar | Autor e orientador | 12/10/2026 |
 | P16 | Limite de gasto no console da Anthropic antes de divulgar o link (qualquer sessão nova pode gerar até 32 consultas, cerca de US$ 1) | Autor | 12/10/2026 |
 | P17 | Preencher a tabela de conferência das medidas em `dashboard/README.md` com os valores do painel publicado | Autor | 12/10/2026 |
@@ -43,7 +41,7 @@ Atualizado a cada decisão nova; as mais recentes ficam no fim de cada seção.
   - 8 pedidos válidos não têm nenhum item;
   - 6 pedidos cancelados ou indisponíveis têm data de entrega;
   - 2 categorias não têm tradução (`pc_gamer` e `portateis_cozinha_e_preparadores_de_alimentos`), e há produtos sem categoria;
-  - o período vai de 04/09/2016 a 17/10/2018.
+  - o período vai de 04/09/2016 a 17/10/2018, mas o **período efetivo é de jan. 2017 a ago. 2018**: 2016 tem 296 pedidos válidos (quase todos em out.), set. 2018 tem 1 e out. 2018 nenhum (só cancelados). Isso afeta qualquer análise "do último período" (ver B7) e os totais anuais de 2016 e 2018.
 
   **Cap. 3.**
 - ✅ **D1.7 Usuários do banco:**
@@ -120,6 +118,8 @@ As escolhas originais estão no `README.md`, na tabela "Escolhas para o experime
 - ⚠️ **D4.6 O mesmo agente (o autor, com apoio de IA) construiu as duas soluções e escreveu as perguntas.** A revisão pelo orientador e por uma pessoa de fora (P8) atenua isso. **Cap. 5** (validade interna).
 - ✅ **D4.7 Versão do dashboard usada na classificação:** hash `650a8b665c17` dos arquivos de `dashboard/`. **Cap. 3.**
 - ✅ **D4.8 Critério "recusa" com revisão manual** (12/10/2026, auditoria antes da coleta). Se a IA recusa (sem_dados ou esclarecimento), a resposta conta como correta. Se a IA executa o SQL e escreve a explicação, a resposta vai para `pendente_manual`, e não para incorreto. **Motivo:** no teste, a D2 ("Quanto vendemos ontem?") devolveu R$ 0,00, mas a explicação dizia que a base termina em 2018 e que a pergunta não pode ser respondida. Essa é a resposta desejada, e a regra anterior a marcava como erro. **Cap. 3.**
+- ✅ **D4.9 Seis perguntas-armadilha** (B7, B8, C8, C9, C10, C11; 12/10/2026): qualidade de dados, conhecimento de domínio, fan trap, mudança de definição, várias etapas e granularidade. Não foram testadas na IA antes de entrar. **Motivo:** reduzir o risco de efeito teto (D9.3) sem viés de seleção; cada uma se justifica pela literatura (Kimball Group, [2013?]; Liu et al., 2025; Li et al., 2023) e pelo realismo. **Cap. 3.**
+- ✅ **D4.10 Seleção final de 20 perguntas:** A1, A2, A5, A6 | B1, B3, B4, B5, B7, B8 | C1, C3, C4, C8, C9, C11 | D1, D2, D3, D5. Critérios: pelo menos 4 por tipo; mais B e C porque são os tipos exploratórios; evitar repetição e perguntas adivinháveis; limitar a correção manual (3 rubricas). As 32 candidatas ficam em `avaliacao/perguntas_candidatas.csv`. Falta a conferência do orientador (P8) antes do congelamento. **Cap. 3 e apêndice.**
 
 ## Fase 6: Estudo com usuários
 
@@ -175,4 +175,4 @@ As escolhas originais estão no `README.md`, na tabela "Escolhas para o experime
 
 - ✅ **D9.2 Repositório público** em https://github.com/ArivaldoFilho/tcc-undb (12/10/2026). Ficam fora do Git: `.env` (segredos), `dados/` (CSVs do Kaggle), o `.docx` do TCC (texto não publicado) e o `.pbix` (gerado a partir do PBIP). **Motivo:** reprodutibilidade, com o código, os SQLs, os gabaritos e os critérios abertos para a banca. **Cap. 3** (disponibilidade do material).
 
-- ⚠️ **D9.3 Auditoria de 12/10/2026: risco de efeito teto.** No teste da Fase 5 (5 perguntas, 1 repetição), a IA acertou todas as perguntas corrigíveis automaticamente, inclusive a armadilha de customer_unique_id (B5), e respondeu bem à C1 e à D2. Se a IA acertar quase tudo, a matriz de decisão fica pobre e o viés de automação não aparece. **Mitigação (P14):** perguntas mais difíceis, ainda realistas, antes do congelamento. **Cap. 5.**
+- ⚠️ **D9.3 Auditoria de 12/10/2026: risco de efeito teto.** No teste da Fase 5 (5 perguntas, 1 repetição), a IA acertou todas as perguntas corrigíveis automaticamente, inclusive a armadilha de customer_unique_id (B5), e respondeu bem à C1 e à D2. Se a IA acertar quase tudo, a matriz de decisão fica pobre e o viés de automação não aparece. **Mitigação:** perguntas-armadilha (D4.9). **Cap. 5.**

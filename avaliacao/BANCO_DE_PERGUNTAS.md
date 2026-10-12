@@ -1,11 +1,10 @@
 # Banco de perguntas (Fase 4)
 
-São 26 perguntas candidatas: 6 do tipo A, 6 do tipo B, 7 do tipo C e 7 do
-tipo D. O plano prevê de 16 a 20 na versão final. Escolha as definitivas,
-apague as linhas das outras em `perguntas.csv` e em `dashboard.csv` e só
-depois congele os dois arquivos.
-
-- `perguntas.csv` é lido por `rodar.py` e por `corrigir.py` (Solução B).
+- `perguntas_candidatas.csv`: as 32 candidatas (26 iniciais e 6 armadilhas).
+- `perguntas.csv`: a **seleção final de 20** (4 A, 6 B, 6 C e 4 D). É lido por
+  `rodar.py`, `corrigir.py` e pelo estudo com usuários.
+- Para trocar uma pergunta, copie a linha das candidatas para `perguntas.csv`
+  (e para `dashboard.csv`) e só depois congele os dois arquivos.
 - `dashboard.csv` é a ficha da avaliação no painel (Solução A). As colunas
   `*_previsto` justificam o tipo de cada pergunta; as demais são preenchidas
   na Fase 5.
@@ -33,12 +32,14 @@ tipo B, porque também pode ser respondida selecionando os meses de jul a dez.
 
 ## Critérios de acerto (definidos antes da coleta)
 
+As colunas de perguntas abaixo listam as 26 candidatas iniciais. As armadilhas estão na seção própria.
+
 | Critério | Quando é correto | Perguntas |
 |---|---|---|
 | numero | Resultado com uma linha e alguma célula igual ao gabarito, dentro da tolerância | A1-A3, B1-B6, C3, C4 |
 | percentual | Como numero; aceita a resposta em pontos (6,63) ou em fração (0,0663) | A6 |
 | lista | Alguma coluna do resultado tem exatamente o conjunto do gabarito; a ordem não conta | A4, A5, C5, C6 |
-| recusa | A decisão foi sem_dados ou esclarecimento | D1-D4 |
+| recusa | A decisão foi sem_dados ou esclarecimento; se a IA executou SQL e explicou, vai para revisão manual (D4.8) | D1-D4 |
 | rubrica | Correção manual pelo texto da coluna observacao | C1, C2, C7, D5-D7 |
 
 ### Tolerâncias
@@ -76,6 +77,38 @@ tipo B, porque também pode ser respondida selecionando os meses de jul a dez.
 | C7 | acima de 5 kg: R$ 39,78; até 5 kg: R$ 17,21 | Atributo de produto não modelado |
 | D1-D4 | recusa | Lucro, data fora da base, meta, estoque |
 | D5-D7 | rubrica | Ambiguidade e período sem dados |
+
+## Perguntas-armadilha (acrescentadas em 12/10/2026)
+
+O teste de auditoria mostrou risco de efeito teto: a IA acertou todas as
+perguntas iniciais testadas. Foram acrescentadas 6 perguntas realistas, cada
+uma com uma dificuldade conhecida. **Elas não foram testadas na IA antes de
+entrar no banco:** escolher perguntas porque a IA erra nelas seria um viés de
+seleção.
+
+| Id | Dificuldade | Correto | Resposta ingênua |
+|---|---|---|---|
+| B7 | Qualidade de dados: o último trimestre "na data" (T3 2018) está incompleto | T2 2018: R$ 2.849.730,26 | T3 sem aviso: R$ 1.727.049,37 |
+| B8 | Conhecimento de domínio: Nordeste = 9 UFs | 4.713 clientes | 4.799 (customer_id) |
+| C8 | Fan trap: junção de itens com pagamentos | R$ 206.928,31 | R$ 315.312,64 (+52%) |
+| C9 | Mudança de definição: ticket com frete | R$ 159,77 | R$ 137,64 (sem frete) |
+| C10 | Várias etapas: taxa por UF com corte de volume | CE | AL (sem o corte) |
+| C11 | Granularidade: média por pedido, não por pagamento | R$ 160,56 | R$ 154,81 |
+
+## Seleção final (20)
+
+| Tipo | Perguntas | Por que estas |
+|---|---|---|
+| A | A1, A2, A5, A6 | Número, lista e percentual; A1 e A2 estão no estudo |
+| B | B1, B3, B4, B5, B7, B8 | Filtros combinados, definições (B3, B5), qualidade de dados (B7) e domínio (B8) |
+| C | C1, C3, C4, C8, C9, C11 | Cruzamento analítico (C1), tabela fora do painel (C3), recompra (C4) e três armadilhas |
+| D | D1, D2, D3, D5 | Dado inexistente (D1, D3), data fora da base (D2) e ambiguidade (D5) |
+
+Ficaram de fora: A3 e A4 (parecidas com A1 e A5), B2 e B6 (parecidas com B3 e
+B5), C2, C5, C6, C7 e C10 (C6 dá para adivinhar sem dados; C5 exige digitar
+ids longos; C2 e C7 aumentariam a correção manual), D4, D6 e D7 (repetem D1,
+D5 e D2). Tipos B e C têm mais perguntas porque são os "exploratórios" da
+hipótese.
 
 ## Antes de congelar
 
