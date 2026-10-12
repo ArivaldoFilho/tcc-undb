@@ -251,7 +251,7 @@ function telaIntroBloco(bloco) {
     "O painel tem três páginas, que você troca pelas abas na parte de baixo: Visão geral, Vendas e Entrega e satisfação. Use os filtros no topo de cada página (ano, mês, estado...). Passe o mouse sobre os gráficos para ver os valores.",
   ] : [
     "Nesta parte você vai usar um assistente de IA que responde, em português, perguntas sobre a mesma base de vendas.",
-    "Escreva a pergunta na caixa de texto (pode copiar a pergunta do topo da tela ou reformular). A resposta traz um texto, uma tabela, as suposições adotadas pelo assistente e a consulta SQL que ele executou. Você pode fazer mais de uma consulta para a mesma pergunta. Cada resposta pode levar de 10 a 60 segundos.",
+    "Cada tarefa descreve uma situação de negócio. Escreva na caixa de texto, com as suas palavras, a pergunta que você faria para resolver a tarefa. A resposta traz um texto, uma tabela, as suposições adotadas pelo assistente e a consulta SQL que ele executou. Você pode fazer mais de uma consulta para a mesma pergunta. Cada resposta pode levar de 10 a 60 segundos.",
     "Não digite dados pessoais: as perguntas são processadas por um serviço de IA externo.",
   ];
   tela(
@@ -261,8 +261,8 @@ function telaIntroBloco(bloco) {
       ...textos.map((t) => el("p", { text: t })),
       el("p", { class: "aviso", text: "Responda apenas com o que encontrar nesta ferramenta. Não use outras fontes, como planilhas, buscadores ou outros chats de IA. Se a informação não existir nos dados, ou se você não conseguir chegar à resposta nesta ferramenta, marque a opção correspondente: essas também são respostas válidas." }),
     ]),
-    el("p", { text: `São ${bloco.perguntas.length} perguntas. O tempo de cada uma é medido, mas responda no seu ritmo normal.` }),
-    ...botaoEnviar("Ir para a primeira pergunta", async () => { guardar(chave("intro", bloco.bloco), "1"); await seguir(); }),
+    el("p", { text: `São ${bloco.perguntas.length} tarefas. O tempo de cada uma é medido, mas responda no seu ritmo normal.` }),
+    ...botaoEnviar("Ir para a primeira tarefa", async () => { guardar(chave("intro", bloco.bloco), "1"); await seguir(); }),
   );
 }
 
@@ -322,7 +322,7 @@ function telaPergunta(bloco, pergunta, posicao) {
 
   app.replaceChildren(el("div", { class: "tarefa" }, [
     el("div", { class: "tarefa-topo" }, [
-      el("div", { class: "progresso", text: `${NOMES[bloco.ferramenta]} · pergunta ${posicao} de ${bloco.perguntas.length}` }),
+      el("div", { class: "progresso", text: `${NOMES[bloco.ferramenta]} · tarefa ${posicao} de ${bloco.perguntas.length}` }),
       el("p", { class: "enunciado", text: pergunta.texto }),
     ]),
     el("div", { class: "tarefa-corpo" }, [

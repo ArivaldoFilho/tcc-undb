@@ -24,6 +24,7 @@ Atualizado a cada decisão nova; as mais recentes ficam no fim de cada seção.
 | P10 | Ler a adaptação brasileira do SUS e ajustar os itens da página do estudo | Autor | 12/10/2026 |
 | P11 | Preencher e revisar o termo de consentimento (`config/estudo.json`, `static/estudo.html`) | Autor e orientador | 12/10/2026 |
 | P12 | Como o Power BI foi conectado ao Supabase: certificado raiz instalado ou criptografia desligada? Registrar a escolha | Autor | 12/10/2026 |
+| P13 | Cenários já escritos (D6.20). Falta escolher as perguntas do estudo depois da Fase 5, priorizando as que a IA às vezes erra | Autor | 12/10/2026 |
 
 ---
 
@@ -150,6 +151,8 @@ As escolhas originais estão no `README.md`, na tabela "Escolhas para o experime
   **Motivo:** o teste mostrou acertos marcados como erro (`6.11` em vez de "6,11 Mi") e a falta de uma distinção entre "o painel não responde" e "a pessoa errou". **Cap. 3.**
 - ✅ **D6.17 Opções de resposta reescritas:** "A informação necessária não existe nos dados" e "Não consegui chegar à resposta nesta ferramenta". A tela também pede a unidade (Mi, mil, %). **Motivo:** separar a pergunta sem dado (tipo D) da falha da ferramenta ou da pessoa. **Cap. 3.**
 - ✅ **D6.18 O teste do autor foi registrado como piloto** (T001). Ele entrou sem `?piloto=1` e foi reclassificado, para não desequilibrar o sorteio dos grupos. **Achado do piloto:** na B1, o painel levou a um erro real (R$ 2,19 Mi, que é SP no ano inteiro, contra R$ 1,46 Mi no 2º semestre). O filtro de semestre só existe na página Vendas. **Cap. 5** (exemplo qualitativo).
+- ⚠️ **D6.19 Pergunta literal favorece o Indaga** (achado do teste do autor, 12/10/2026). Com o enunciado na tela, a tarefa no Indaga vira copiar e colar: o acerto do participante repetiu o da IA (4 de 4), e a formulação, que é a parte difícil da linguagem natural, ficou com o pesquisador. No painel, a pessoa precisa traduzir a pergunta em filtros. Além disso, sem erros da IA, o viés de automação não pode ser observado. **Proposta (P13):** enunciados como cenários de negócio, iguais para as duas ferramentas, em linguagem de gestor; perguntas escolhidas depois da Fase 5, priorizando as que a IA às vezes erra. **Cap. 3 e 5.**
+- ✅ **D6.20 Enunciados do estudo como cenários de negócio** (12/10/2026). O participante vê uma situação com motivo de negócio, em linguagem de gestor e sem nomes internos ("beleza e saúde" em vez de `beleza_saude`), igual para as duas ferramentas. No Indaga, a instrução pede que ele escreva a pergunta com as próprias palavras. Os cenários estão em `config/estudo.json` (`cenarios`); o gabarito não muda. A Fase 5 continua com as perguntas literais. **Motivo:** D6.19. A Fase 5 mede a ferramenta com a pergunta bem formulada; a Fase 6 mede o humano no circuito, formulando, verificando e confiando. O piloto T001 foi feito com as perguntas literais. **Cap. 3.**
 - ⏳ **D6.13 Itens do SUS:** por enquanto é uma tradução de trabalho. **Ver P10.**
 - ⏳ **D6.14 Termo de consentimento:** é um rascunho. **Ver P1 e P11.**
 

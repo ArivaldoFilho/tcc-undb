@@ -1,5 +1,5 @@
 {
-  "_leia_me": "Configuração do estudo com usuários (Fase 6). Os textos e gabaritos das perguntas vêm de avaliacao/perguntas.csv, pelo id. Cada conjunto tem uma pergunta de cada tipo (A, B, C, D), em pares equivalentes: A1/A2, B1/B4, C4/C3, D1/D3. Não altere depois que o primeiro participante real começar.",
+  "_leia_me": "Configuração do estudo com usuários (Fase 6). Gabaritos e critérios vêm de avaliacao/perguntas.csv, pelo id. No estudo, o participante vê o 'cenario' (enunciado de negócio, igual para as duas ferramentas), e não a pergunta literal da Fase 5: assim, no Indaga, ele precisa formular a pergunta com as próprias palavras. Cada conjunto tem uma pergunta de cada tipo (A, B, C, D), em pares equivalentes: A1/A2, B1/B4, C4/C3, D1/D3. Não altere depois que o primeiro participante real começar.",
   "termo": {
     "titulo_pesquisa": "[TÍTULO DO TCC]",
     "pesquisador": "Arivaldo Braga",
@@ -21,6 +21,16 @@
       "C3",
       "D3"
     ]
+  },
+  "cenarios": {
+    "A1": "O diretor financeiro pediu o faturamento total da loja em 2017 para fechar o relatório anual. Qual foi esse valor?",
+    "A2": "Para planejar a equipe de atendimento, você precisa saber quantos pedidos a loja recebeu ao longo de 2018. Quantos foram?",
+    "B1": "Você vai apresentar o desempenho da loja em São Paulo na segunda metade de 2017. Quanto a loja faturou com clientes paulistas nesse período?",
+    "B4": "O marketing quer avaliar a Black Friday da categoria de beleza e saúde, em novembro de 2017. Quanto essa categoria faturou naquele mês?",
+    "C4": "A área de relacionamento está avaliando um programa de fidelidade e quer saber o tamanho da base de clientes fiéis. Quantos clientes compraram na loja mais de uma vez?",
+    "C3": "O financeiro vai renegociar as taxas com a operadora de cartão. Em média, em quantas parcelas os clientes dividem as compras pagas com cartão de crédito?",
+    "D1": "Na reunião de resultados, um sócio perguntou qual foi o lucro líquido da loja em 2017. Qual foi?",
+    "D3": "O conselho quer saber se a loja bateu a meta de vendas de 2018. Bateu?"
   },
   "max_consultas_ia_por_pergunta": 8
 }

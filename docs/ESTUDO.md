@@ -30,7 +30,9 @@ o participante faz ao Indaga ficam em `indaga.execucoes`, com
 
   Cada participante novo entra no grupo que tem menos gente no momento.
 - **Conjuntos equivalentes:** cada conjunto tem uma pergunta de cada tipo, em
-  pares, definidos em `config/estudo.json`.
+  pares, definidos em `config/estudo.json`. O participante vê um **cenário de
+  negócio** (`cenarios`), e não a pergunta literal da Fase 5. Assim, no Indaga,
+  ele precisa formular a pergunta com as próprias palavras.
 
   | Tipo | Conjunto X | Conjunto Y |
   |---|---|---|

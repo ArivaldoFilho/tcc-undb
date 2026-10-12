@@ -51,9 +51,11 @@ def perguntas() -> dict[str, dict]:
 def plano(grupo: int) -> list[dict]:
     todas = perguntas()
     conjuntos = configuracao()["conjuntos"]
+    # O participante vê o cenário de negócio, não a pergunta literal da Fase 5.
+    cenarios = configuracao().get("cenarios", {})
     return [
         {"bloco": i, "ferramenta": ferramenta, "conjunto": conjunto,
-         "perguntas": [{"id": pid, "tipo": todas[pid]["tipo"], "texto": todas[pid]["pergunta"]}
+         "perguntas": [{"id": pid, "tipo": todas[pid]["tipo"], "texto": cenarios.get(pid, todas[pid]["pergunta"])}
                        for pid in conjuntos[conjunto]]}
         for i, (ferramenta, conjunto) in enumerate(GRUPOS[grupo], start=1)
     ]
