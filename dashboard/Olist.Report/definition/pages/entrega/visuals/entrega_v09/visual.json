@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "entrega_v09",
+  "position": {
+    "x": 1020,
+    "y": 80,
+    "z": 9000,
+    "width": 240,
+    "height": 100,
+    "tabOrder": 9000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Avaliações"
+                }
+              },
+              "queryRef": "Medidas.Avaliações",
+              "nativeQueryRef": "Avaliações"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

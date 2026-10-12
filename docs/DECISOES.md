@@ -1,0 +1,158 @@
+# Decisões do projeto
+
+Registro vivo das decisões técnicas e metodológicas, para usar na escrita do
+TCC. Cada item diz o que foi decidido, por quê e em que capítulo entra.
+Atualizado a cada decisão nova; as mais recentes ficam no fim de cada seção.
+
+**Legenda:** ✅ decidido · ⏳ pendente · ⚠️ ameaça à validade ou limitação, que vai para o cap. 5 ou 6
+
+---
+
+## Pendências abertas
+
+| # | Pendência | Com quem | Desde |
+|---|---|---|---|
+| P1 | O estudo com usuários precisa de aprovação do CEP (Plataforma Brasil) ou é dispensado? | Orientador e coordenação | 12/10/2026 |
+| P2 | Versão mínima (sem usuários) ou completa (com usuários)? | Orientador | 12/10/2026 |
+| P3 | Como medir o esforço de construção do dashboard, já que ele foi gerado com apoio de IA (ver D2.1)? | Orientador | 12/10/2026 |
+| P4 | Qual é a política da UNDB para uso de IA, e como declarar esse uso? | Coordenação | 12/10/2026 |
+| P5 | Remover o segmentador de Semestre do dashboard antes de congelar (ver D2.6)? | Autor | 12/10/2026 |
+| P6 | Congelar o dashboard e registrar a data | Autor | 12/10/2026 |
+| P7 | Escolher de 16 a 20 das 26 perguntas candidatas | Autor | 12/10/2026 |
+| P8 | Conferência dos gabaritos pelo orientador; revisão das perguntas do tipo C por uma pessoa de fora | Orientador e revisor externo | 12/10/2026 |
+| P9 | Conferir a licença da base Olist no Kaggle | Autor | 12/10/2026 |
+| P10 | Ler a adaptação brasileira do SUS e ajustar os itens da página do estudo | Autor | 12/10/2026 |
+| P11 | Preencher e revisar o termo de consentimento (`config/estudo.json`, `static/estudo.html`) | Autor e orientador | 12/10/2026 |
+| P12 | Como o Power BI foi conectado ao Supabase: certificado raiz instalado ou criptografia desligada? Registrar a escolha | Autor | 12/10/2026 |
+
+---
+
+## Fase 1: Base de dados
+
+- ✅ **D1.1 Base:** *Brazilian E-Commerce Public Dataset by Olist* (Kaggle), com 9 tabelas relacionadas. **Motivo:** uma base com várias tabelas evita favorecer a IA, como uma tabela única faria (plano, seção 5, Fase 1). **Cap. 3.**
+- ✅ **D1.2 Banco:** PostgreSQL 17 no Supabase (região us-east-1), um único banco para as duas soluções. **Cap. 3 e 4.**
+- ✅ **D1.3 Sem limpeza:** os CSVs foram carregados como estão, com conferência de cabeçalho e de tipos antes da carga. Nenhum valor foi alterado ou removido. **Cap. 4.**
+- ✅ **D1.4 Linhas por tabela** (carga de 12/10/2026): customers 99.441 · sellers 3.095 · products 32.951 · product_category_name_translation 71 · orders 99.441 · order_items 112.650 · order_payments 103.886 · order_reviews 99.224 · geolocation 1.000.163. **Cap. 3.**
+- ✅ **D1.5 Chaves:** 8 tabelas com chave primária. Em `order_reviews`, a chave é o par (review_id, order_id), porque review_id se repete 814 vezes e o par não se repete. `geolocation` ficou sem chave primária, porque o prefixo de CEP se repete. As 6 chaves estrangeiras foram criadas sem nenhuma violação. **Cap. 4.**
+- ✅ **D1.6 Peculiaridades encontradas na base**, que entram na descrição da base:
+  - 8 pedidos válidos não têm nenhum item;
+  - 6 pedidos cancelados ou indisponíveis têm data de entrega;
+  - 2 categorias não têm tradução (`pc_gamer` e `portateis_cozinha_e_preparadores_de_alimentos`), e há produtos sem categoria;
+  - o período vai de 04/09/2016 a 17/10/2018.
+
+  **Cap. 3.**
+- ✅ **D1.7 Usuários do banco:**
+  - `indaga_app`: dono dos schemas, usado na carga e no log;
+  - `indaga_leitor`: somente leitura, com transação read-only e timeout de 20 s. É quem executa o SQL gerado pela IA e quem o Power BI usa.
+
+  **Motivo:** menor privilégio. A senha do usuário `postgres` não foi usada. **Cap. 4** (arquitetura e segurança).
+
+## Definições de métrica (compartilhadas pelas duas soluções)
+
+- ✅ **D0.1 Uma única fonte de definições:** `config/descricoes.json`. As medidas DAX do dashboard reproduzem o mesmo texto. **Motivo:** se as definições diferissem, a comparação mediria definições diferentes, e não abordagens diferentes. **Cap. 3.**
+- ✅ **D0.2 Três definições deixadas explícitas** em 12/10/2026, porque o dashboard precisou escolher uma leitura:
+  - **Prazo de entrega:** diferença entre as datas, sem a hora.
+  - **Nota média:** o período é o da compra do pedido avaliado.
+  - **Clientes únicos:** contados só entre os clientes com pedidos válidos.
+
+  **Motivo:** sem isso, o Indaga e o dashboard poderiam calcular números diferentes para a mesma métrica. Por exemplo, o prazo calculado com a hora dá 21,70 dias em B3, contra 21,63 pela definição. **Cap. 3.**
+- ✅ **D0.3 Métricas de entrega** (entregue, atrasado e prazo) **não filtram pedido válido.** **Motivo:** a definição não pede esse filtro. Os 6 cancelados com data de entrega contam como entregues. **Cap. 3.**
+
+## Fase 2: Dashboard (Solução A)
+
+- ⚠️ **D2.1 O dashboard foi gerado com apoio de IA** (Claude), como projeto PBIP. As horas de construção não representam o esforço de um desenvolvedor humano. **Ver P3.** **Cap. 3 e 5.**
+- ✅ **D2.2 Modelo em estrela:**
+  - 3 fatos, uma por grão: fItens (item), fPedidos (pedido) e fAvaliacoes (avaliação);
+  - 4 dimensões: dCalendario, dCliente, dProduto e dVendedor;
+  - as fatos não se ligam entre si.
+
+  **Motivo:** juntar fatos de grãos diferentes produz resultados incorretos (Kimball Group, [2013?]). **Cap. 4.**
+- ✅ **D2.3 As regras de negócio ficam no SQL de cada fato** ("pedido válido", "entregue", "atrasado" e "prazo"). As medidas DAX só somam, contam e dividem. Os SQLs estão em `dashboard/sql/`. **Cap. 4.**
+- ✅ **D2.4 Medida "Pedidos" com dois caminhos:** sem filtro de produto ou vendedor, ela conta os pedidos de fPedidos; com esse filtro, conta os de fItens. **Motivo:** fazer o ticket médio por categoria funcionar. Por causa dos 8 pedidos sem item (D1.6), as duas contagens diferem no total. **Cap. 4.**
+- ✅ **D2.5 O segmentador de categoria só existe na página Vendas.** **Motivo:** entrega, atraso e nota não reagem ao filtro de produto. **Cap. 4.**
+- ⚠️ **D2.6 Viés na construção:** o dashboard foi montado depois de existirem 6 perguntas de exemplo, e o segmentador de Semestre coincide com a pergunta B1. **Ver P5.** **Cap. 5** (validade interna).
+- ✅ **D2.7 Modo de importação**, com 3 páginas: Visão geral, Vendas e Entrega e satisfação. A conferência das 12 medidas contra o SQL está em `dashboard/README.md`. **Cap. 4.**
+- ✅ **D2.8 Publicação pelo "Publicar na Web" do Power BI.** O link é público, o que não é problema porque a base é pública. **Motivo:** o estudo com usuários é online (D6.1). **Cap. 4.**
+
+## Fase 3: Indaga (Solução B)
+
+As escolhas originais estão no `README.md`, na tabela "Escolhas para o experimento":
+- modelo `claude-opus-5-5` com esforço `medium`;
+- temperatura não enviada;
+- sem cache, sem few-shot, sem retry automático e sem fallback de modelo;
+- esquema inteiro no prompt;
+- `config_hash` gravado em cada execução.
+
+**Cap. 4.**
+
+- ✅ **D3.1 O que o modelo recebe:** na decisão e na geração do SQL, só a estrutura, as descrições e as definições, sem nenhuma linha de dados. Na explicação, até 50 linhas do resultado. **Cap. 4**, com a discussão de LGPD.
+- ✅ **D3.2 Três barreiras de segurança:** um guardrail que aceita só um SELECT, a transação read-only e o usuário sem permissão de escrita. **Cap. 4.**
+
+## Fase 4: Banco de perguntas
+
+- ✅ **D4.1 Os tipos são definidos em relação ao dashboard congelado**, e não pela dificuldade da pergunta:
+  - **A:** um visual responde, com no máximo um segmentador;
+  - **B:** o painel responde, mas com 2 ou mais filtros;
+  - **C:** nenhum visual responde;
+  - **D:** o dado não existe na base, ou a pergunta é ambígua.
+
+  "Exploratória" equivale aos tipos B e C. **Motivo:** a banca simulada pediu uma definição operacional. **Cap. 3.**
+- ✅ **D4.2 26 perguntas candidatas** (6 A, 6 B, 7 C e 7 D), com gabarito em SQL rodado no banco em 12/10/2026. Estão em `avaliacao/perguntas.csv` e `avaliacao/BANCO_DE_PERGUNTAS.md`. **Ver P7 e P8.** **Cap. 3 e apêndice.**
+- ✅ **D4.3 Critérios de acerto**, definidos antes da coleta: numero, percentual, lista, recusa e rubrica. **Tolerâncias:**
+  - 0,01 em valores em reais e em médias;
+  - 0,05 dia no prazo;
+  - 0,1 ponto percentual nos percentuais;
+  - zero nas contagens.
+
+  **Cap. 3.**
+- ✅ **D4.4 Critério "percentual" criado** em 12/10/2026, antes de qualquer coleta. Ele aceita a resposta em pontos (6,63) ou em fração (0,0663). **Motivo:** as duas formas estão certas, e o critério "numero" marcaria a fração como erro. **Cap. 3.**
+- ✅ **D4.5 Perguntas sensíveis às definições,** para separar quem segue as definições de quem não segue:
+  - **A2:** contar os cancelados dá 54.011 pedidos, contra 53.532 pela definição;
+  - **B5:** contar customer_id dá 23.599 clientes, contra 23.051 por customer_unique_id;
+  - **C5:** o 5º e o 6º vendedores diferem em apenas R$ 517.
+
+  **Cap. 5** (discussão dos erros).
+- ⚠️ **D4.6 O mesmo agente (o autor, com apoio de IA) construiu as duas soluções e escreveu as perguntas.** A revisão pelo orientador e por uma pessoa de fora (P8) atenua isso. **Cap. 5** (validade interna).
+- ✅ **D4.7 Versão do dashboard usada na classificação:** hash `650a8b665c17` dos arquivos de `dashboard/`. **Cap. 3.**
+
+## Fase 6: Estudo com usuários
+
+- ✅ **D6.1 Estudo online e assíncrono, em vez de sessões acompanhadas** (12/10/2026). O participante recebe um link e faz tudo pelo navegador, com as duas ferramentas embutidas na página. **Motivo:** simplificar a coleta com participantes de fora, sem agendamento e sem acesso ao computador do autor. **Cap. 3.**
+- ⚠️ **D6.2 Limitações do formato online:**
+  - não há observação direta;
+  - "conferiu a resposta" é declarado pela pessoa;
+  - os cliques no Power BI não são registrados, porque o painel embutido é da Microsoft;
+  - o ambiente de cada participante varia (máquina e internet).
+
+  **Cap. 5 e 6.**
+- ✅ **D6.3 Desenho intrassujeito com contrabalanceamento:** 4 grupos que cruzam a ordem das ferramentas com o conjunto de perguntas. Cada participante entra no grupo menos preenchido. **Cap. 3.**
+- ✅ **D6.4 Dois conjuntos de 4 perguntas**, um de cada tipo, em pares: X = A1, B1, C4, D1 e Y = A2, B4, C3, D3. **Motivo:** com 8 perguntas, o estudo leva uns 30 minutos. **Cap. 3.**
+- ⚠️ **D6.5 O par C não é perfeitamente equivalente:** C4 (recompra) é mais difícil que C3 (parcelas). **Cap. 5.**
+- ✅ **D6.6 Tempo da tarefa:** vai do carregamento da ferramenta até o envio da resposta, e continua de onde estava se a pessoa reabrir a página. **Motivo:** a demora para carregar o Power BI não deve pesar contra o painel. **Cap. 3.**
+- ✅ **D6.7 Métricas:**
+  - **por pergunta:** tempo, resposta, acerto, confiança de 1 a 5, se conferiu, "os dados não permitem" ou "não consegui";
+  - **só no Indaga:** número de consultas, se a última resposta da IA estava certa, se abriu o SQL;
+  - **por ferramenta:** SUS;
+  - **no fim:** preferência por tipo de pergunta e em qual confiou mais.
+
+  **Cap. 3.**
+- ✅ **D6.8 Tolerância para respostas digitadas:** a maior entre a tolerância do gabarito e 0,5% do valor. **Motivo:** os cartões do Power BI mostram valores abreviados ("6,11 Mi"). **Cap. 3.**
+- ✅ **D6.9 Viés de automação:** a última resposta da IA estava errada, o participante respondeu errado e declarou confiança 4 ou 5. Segue Gu et al. (2024). **Cap. 3 e 5.**
+- ✅ **D6.10 Limite de custo:** no máximo 8 consultas à IA por pergunta, aceitas só para a pergunta em andamento. Mais um limite de gasto no console da Anthropic. **Cap. 4.**
+- ✅ **D6.11 Dados mínimos:** sem nome, e-mail ou documento. O participante é identificado por um código (P001...), e o piloto usa outro (T001...), que fica fora da análise. O termo avisa que as perguntas digitadas são processadas por um serviço de terceiros (Anthropic). **Cap. 3**, com a discussão de LGPD e ética.
+- ✅ **D6.12 Hospedagem no Render**, e não na Vercel. **Motivo:** o Indaga roda lá sem adaptação e sem limite de tempo por requisição. O plano gratuito dorme depois de 15 minutos sem acesso; durante a coleta, prefira o Starter. **Cap. 4.**
+- ⏳ **D6.13 Itens do SUS:** por enquanto é uma tradução de trabalho. **Ver P10.**
+- ⏳ **D6.14 Termo de consentimento:** é um rascunho. **Ver P1 e P11.**
+
+## Uso de IA no desenvolvimento
+
+- ⚠️ **D9.1 Partes desenvolvidas com apoio de IA (Claude, Anthropic):**
+  - o código do Indaga;
+  - o projeto do dashboard;
+  - os scripts de carga e de avaliação;
+  - a página do estudo;
+  - o rascunho do banco de perguntas.
+
+  Precisa ser declarado conforme a política da UNDB. **Ver P4.** **Cap. 3** (ou uma seção de declaração).
+
+- ✅ **D9.2 Repositório público** em https://github.com/ArivaldoFilho/tcc-undb (12/10/2026). Ficam fora do Git: `.env` (segredos), `dados/` (CSVs do Kaggle), o `.docx` do TCC (texto não publicado) e o `.pbix` (gerado a partir do PBIP). **Motivo:** reprodutibilidade, com o código, os SQLs, os gabaritos e os critérios abertos para a banca. **Cap. 3** (disponibilidade do material).

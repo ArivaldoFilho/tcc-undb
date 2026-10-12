@@ -1,0 +1,26 @@
+{
+  "_leia_me": "Configuração do estudo com usuários (Fase 6). Os textos e gabaritos das perguntas vêm de avaliacao/perguntas.csv, pelo id. Cada conjunto tem uma pergunta de cada tipo (A, B, C, D), em pares equivalentes: A1/A2, B1/B4, C4/C3, D1/D3. Não altere depois que o primeiro participante real começar.",
+  "termo": {
+    "titulo_pesquisa": "[TÍTULO DO TCC]",
+    "pesquisador": "[NOME DO PESQUISADOR]",
+    "orientador": "[NOME DO ORIENTADOR]",
+    "contato": "[E-MAIL DE CONTATO]",
+    "guarda_dados": "até a conclusão e a apresentação do TCC"
+  },
+  "dashboard_url": "https://app.powerbi.com/view?r=eyJrIjoiOGNjZGFlMTctMjU0My00MjNiLTliN2YtMTMzMzllZDgxOTBiIiwidCI6IjlhNWQ1Y2RiLTk5MzMtNDQyMy1hYzMxLTMwYTU4MjhmYjA4NSJ9",
+  "conjuntos": {
+    "X": [
+      "A1",
+      "B1",
+      "C4",
+      "D1"
+    ],
+    "Y": [
+      "A2",
+      "B4",
+      "C3",
+      "D3"
+    ]
+  },
+  "max_consultas_ia_por_pergunta": 8
+}

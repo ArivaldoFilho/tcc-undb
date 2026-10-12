@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "visao_geral_v07",
+  "position": {
+    "x": 436.66666666666669,
+    "y": 80,
+    "z": 7000,
+    "width": 198.33333333333334,
+    "height": 100,
+    "tabOrder": 7000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Ticket médio"
+                }
+              },
+              "queryRef": "Medidas.Ticket médio",
+              "nativeQueryRef": "Ticket médio"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

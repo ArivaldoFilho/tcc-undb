@@ -1,0 +1,35 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "visao_geral_v13",
+  "position": {
+    "x": 20,
+    "y": 672,
+    "z": 13000,
+    "width": 1240,
+    "height": 40,
+    "tabOrder": 13000
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Pedido válido: situação diferente de canceled e unavailable. Faturamento: soma do preço dos itens de pedidos válidos, sem frete. Datas pela data da compra. Atraso e prazo: só pedidos entregues.",
+                    "textStyle": {
+                      "fontSize": "9pt"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "entrega_v07",
+  "position": {
+    "x": 520,
+    "y": 80,
+    "z": 7000,
+    "width": 240,
+    "height": 100,
+    "tabOrder": 7000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Prazo médio de entrega (dias)"
+                }
+              },
+              "queryRef": "Medidas.Prazo médio de entrega (dias)",
+              "nativeQueryRef": "Prazo médio de entrega (dias)"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

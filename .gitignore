@@ -1,0 +1,22 @@
+# Segredos e ambiente local
+.env
+.venv/
+__pycache__/
+*.pyc
+.claude/settings.local.json
+
+# Dados do Olist (baixar do Kaggle; ver README)
+dados/
+
+# Resultados das rodadas (gerados pelos scripts)
+avaliacao/resultados/*
+!avaliacao/resultados/.gitkeep
+
+# Texto do TCC (não publicado) e arquivos temporários do Word
+*.docx
+~$*
+
+# Power BI: o projeto PBIP é a fonte; o .pbix e o cache são gerados
+*.pbix
+**/.pbi/localSettings.json
+**/.pbi/cache.abf

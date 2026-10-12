@@ -1,0 +1,38 @@
+/// Dimensão produto.
+table dProduto
+	lineageTag: cde91f68-e016-5aef-b6f5-84ac7b2fa290
+
+	column product_id
+		dataType: string
+		isHidden
+		lineageTag: 19519268-fc60-5079-9716-08177af077f9
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = User
+
+	column categoria
+		dataType: string
+		lineageTag: 2fa15125-76c7-5ee1-972b-b31df344bb7e
+		summarizeBy: none
+		sourceColumn: categoria
+
+		annotation SummarizationSetBy = User
+
+	column categoria_en
+		dataType: string
+		lineageTag: 1802d6ba-488f-53ee-8667-587913b86374
+		summarizeBy: none
+		sourceColumn: categoria_en
+
+		annotation SummarizationSetBy = User
+
+	partition dProduto = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database(Servidor, Banco, [Query = "-- Produtos sem categoria ficam como ""(sem categoria)""; categorias sem tradução#(lf)-- mantêm o nome em português na coluna em inglês.#(lf)SELECT#(lf)    p.product_id,#(lf)    COALESCE(p.product_category_name, '(sem categoria)') AS categoria,#(lf)    COALESCE(t.product_category_name_english, p.product_category_name, '(no category)') AS categoria_en#(lf)FROM olist.products p#(lf)LEFT JOIN olist.product_category_name_translation t#(lf)       ON t.product_category_name = p.product_category_name"]),
+				    Tipos = Table.TransformColumnTypes(Fonte, {{"product_id", type text}, {"categoria", type text}, {"categoria_en", type text}})
+				in
+				    Tipos
+

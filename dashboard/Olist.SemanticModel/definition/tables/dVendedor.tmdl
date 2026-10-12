@@ -1,0 +1,40 @@
+/// Dimensão vendedor.
+table dVendedor
+	lineageTag: 10f64090-5fa6-5f44-9dff-9b67f33d1e77
+
+	column seller_id
+		dataType: string
+		isHidden
+		lineageTag: 2da58c73-50f0-5911-9166-6c9decaa98dd
+		summarizeBy: none
+		sourceColumn: seller_id
+
+		annotation SummarizationSetBy = User
+
+	column cidade
+		dataType: string
+		lineageTag: e989dd30-2655-5ef2-8329-488cafc08e76
+		summarizeBy: none
+		sourceColumn: cidade
+
+		annotation SummarizationSetBy = User
+
+	column uf
+		dataType: string
+		lineageTag: 90c06320-5b80-5b8b-b1cb-8ecb9c02f9c4
+		summarizeBy: none
+		sourceColumn: uf
+
+		annotation SummarizationSetBy = User
+
+	partition dVendedor = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database(Servidor, Banco, [Query = "SELECT seller_id, seller_city AS cidade, seller_state AS uf#(lf)FROM olist.sellers"]),
+				    Tipos = Table.TransformColumnTypes(Fonte, {{"seller_id", type text}, {"cidade", type text}, {"uf", type text}})
+				in
+				    Tipos
+
+	annotation PBI_ResultType = Exception
+

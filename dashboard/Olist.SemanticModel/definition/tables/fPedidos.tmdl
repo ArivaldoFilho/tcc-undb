@@ -1,0 +1,84 @@
+/// Fato: um registro por pedido.
+table fPedidos
+	lineageTag: 49d60051-707f-5fc9-8711-52e78f4b9b89
+
+	column order_id
+		dataType: string
+		isHidden
+		lineageTag: 0b970e99-c4f9-511a-838e-d1888fefe871
+		summarizeBy: none
+		sourceColumn: order_id
+
+		annotation SummarizationSetBy = User
+
+	column customer_id
+		dataType: string
+		isHidden
+		lineageTag: 45914557-7f32-51f9-80be-752a61d69428
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = User
+
+	column data_compra
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 16987a06-6370-56f1-96ff-9a2e6c8d4220
+		summarizeBy: none
+		sourceColumn: data_compra
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column order_status
+		dataType: string
+		lineageTag: 43c1c9fe-3dfc-5f2d-8fb0-f920807ba3cf
+		summarizeBy: none
+		sourceColumn: order_status
+
+		annotation SummarizationSetBy = User
+
+	column pedido_valido
+		dataType: boolean
+		lineageTag: 333b50e9-27f1-5b92-96ba-9b519a421bf7
+		summarizeBy: none
+		sourceColumn: pedido_valido
+
+		annotation SummarizationSetBy = User
+
+	column entregue
+		dataType: boolean
+		lineageTag: 0ea8fa4e-22d8-5edb-b592-1d28e7dd8d97
+		summarizeBy: none
+		sourceColumn: entregue
+
+		annotation SummarizationSetBy = User
+
+	column atrasado
+		dataType: boolean
+		lineageTag: 182ff868-c96a-5e59-a91b-3bb2715c6166
+		summarizeBy: none
+		sourceColumn: atrasado
+
+		annotation SummarizationSetBy = User
+
+	column prazo_entrega_dias
+		dataType: int64
+		formatString: 0
+		lineageTag: 8091b305-9d4d-59d4-9881-988a5dd6bcd4
+		summarizeBy: none
+		sourceColumn: prazo_entrega_dias
+
+		annotation SummarizationSetBy = User
+
+	partition fPedidos = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database(Servidor, Banco, [Query = "-- Fato pedidos: um registro por pedido.#(lf)SELECT#(lf)    o.order_id,#(lf)    o.customer_id,#(lf)    o.order_purchase_timestamp::date AS data_compra,#(lf)    o.order_status,#(lf)    o.order_status NOT IN ('canceled', 'unavailable') AS pedido_valido,#(lf)    o.order_delivered_customer_date IS NOT NULL AS entregue,#(lf)    o.order_delivered_customer_date IS NOT NULL#(lf)        AND o.order_delivered_customer_date > o.order_estimated_delivery_date AS atrasado,#(lf)    CASE WHEN o.order_delivered_customer_date IS NOT NULL#(lf)         THEN o.order_delivered_customer_date::date - o.order_purchase_timestamp::date#(lf)    END AS prazo_entrega_dias#(lf)FROM olist.orders o"]),
+				    Tipos = Table.TransformColumnTypes(Fonte, {{"order_id", type text}, {"customer_id", type text}, {"data_compra", type date}, {"order_status", type text}, {"pedido_valido", type logical}, {"entregue", type logical}, {"atrasado", type logical}, {"prazo_entrega_dias", Int64.Type}})
+				in
+				    Tipos
+

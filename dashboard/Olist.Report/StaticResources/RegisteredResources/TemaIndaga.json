@@ -1,0 +1,16 @@
+{
+  "name": "Indaga",
+  "dataColors": [
+    "#1F5AA6",
+    "#E07A1F",
+    "#2E9C6A",
+    "#C23B3B",
+    "#7A5AA6",
+    "#8C6D46",
+    "#5A8AA6",
+    "#8A8A8A"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#252423",
+  "tableAccent": "#1F5AA6"
+}

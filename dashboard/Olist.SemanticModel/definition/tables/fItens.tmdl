@@ -1,0 +1,97 @@
+/// Fato: um registro por item de pedido.
+table fItens
+	lineageTag: 04931fc2-d6b6-5d0d-a8c4-444d2742d36e
+
+	column order_id
+		dataType: string
+		isHidden
+		lineageTag: dc925a2a-e7a0-5281-8631-7ee5345307c2
+		summarizeBy: none
+		sourceColumn: order_id
+
+		annotation SummarizationSetBy = User
+
+	column order_item_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d67d7c13-9651-570f-afda-e18fbf8c3ec7
+		summarizeBy: none
+		sourceColumn: order_item_id
+
+		annotation SummarizationSetBy = User
+
+	column product_id
+		dataType: string
+		isHidden
+		lineageTag: 0f37f31f-db33-5e5e-a979-f8efe32eace1
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = User
+
+	column seller_id
+		dataType: string
+		isHidden
+		lineageTag: 455f5153-1c53-5dad-93cf-c90e70e24ff8
+		summarizeBy: none
+		sourceColumn: seller_id
+
+		annotation SummarizationSetBy = User
+
+	column customer_id
+		dataType: string
+		isHidden
+		lineageTag: 01765737-2207-577e-82cd-f908774670b3
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = User
+
+	column data_compra
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 671c32d0-9676-58fc-aed9-086ab5e9668d
+		summarizeBy: none
+		sourceColumn: data_compra
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column pedido_valido
+		dataType: boolean
+		lineageTag: 1cc328e4-f395-54c3-853a-18ef2b1e1c0a
+		summarizeBy: none
+		sourceColumn: pedido_valido
+
+		annotation SummarizationSetBy = User
+
+	column price
+		dataType: decimal
+		formatString: \R$ #,0.00
+		lineageTag: caf974cc-08e9-5399-97dd-a28b8db1202e
+		summarizeBy: none
+		sourceColumn: price
+
+		annotation SummarizationSetBy = User
+
+	column freight_value
+		dataType: decimal
+		formatString: \R$ #,0.00
+		lineageTag: b4d384cd-fb71-5544-9d66-27f6ebef2f26
+		summarizeBy: none
+		sourceColumn: freight_value
+
+		annotation SummarizationSetBy = User
+
+	partition fItens = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database(Servidor, Banco, [Query = "-- Fato itens: um registro por item de pedido.#(lf)SELECT#(lf)    oi.order_id,#(lf)    oi.order_item_id,#(lf)    oi.product_id,#(lf)    oi.seller_id,#(lf)    o.customer_id,#(lf)    o.order_purchase_timestamp::date AS data_compra,#(lf)    o.order_status NOT IN ('canceled', 'unavailable') AS pedido_valido,#(lf)    oi.price,#(lf)    oi.freight_value#(lf)FROM olist.order_items oi#(lf)JOIN olist.orders o ON o.order_id = oi.order_id"]),
+				    Tipos = Table.TransformColumnTypes(Fonte, {{"order_id", type text}, {"order_item_id", Int64.Type}, {"product_id", type text}, {"seller_id", type text}, {"customer_id", type text}, {"data_compra", type date}, {"pedido_valido", type logical}, {"price", Currency.Type}, {"freight_value", Currency.Type}})
+				in
+				    Tipos
+

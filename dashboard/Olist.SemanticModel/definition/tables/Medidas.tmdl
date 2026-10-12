@@ -1,0 +1,86 @@
+/// Medidas do dashboard. Mesmas definições de config/descricoes.json.
+table Medidas
+	lineageTag: 280d9f2d-d621-51d4-ac19-d19159d3e166
+
+	/// Soma de price dos itens de pedidos válidos, sem frete.
+	measure Faturamento = CALCULATE(SUM(fItens[price]), fItens[pedido_valido] = TRUE())
+		formatString: \R$ #,0.00
+		lineageTag: 7dfc9fbd-329a-5a96-82de-84f4b14aa40c
+
+	/// order_id distintos entre os pedidos válidos. Com filtro de produto ou vendedor, conta os pedidos que têm itens desse filtro.
+	measure Pedidos =
+			VAR filtroPorItem = ISCROSSFILTERED(dProduto) || ISCROSSFILTERED(dVendedor)
+			RETURN
+			    IF(
+			        filtroPorItem,
+			        CALCULATE(DISTINCTCOUNT(fItens[order_id]), fItens[pedido_valido] = TRUE()),
+			        CALCULATE(DISTINCTCOUNT(fPedidos[order_id]), fPedidos[pedido_valido] = TRUE())
+			    )
+		formatString: #,0
+		lineageTag: 3661ae0e-ca3e-5af3-b1f9-08dcc11994b7
+
+	/// Faturamento dividido pelo número de pedidos.
+	measure 'Ticket médio' = DIVIDE([Faturamento], [Pedidos])
+		formatString: \R$ #,0.00
+		lineageTag: 045b93d2-f110-5945-8c78-84f89ce53463
+
+	/// Soma de freight_value dos itens de pedidos válidos.
+	measure Frete = CALCULATE(SUM(fItens[freight_value]), fItens[pedido_valido] = TRUE())
+		formatString: \R$ #,0.00
+		lineageTag: 88801d95-9686-50df-90da-c4d2f49b1ac7
+
+	/// customer_unique_id distintos entre os clientes com pedidos válidos.
+	measure 'Clientes únicos' =
+			CALCULATE(
+			    DISTINCTCOUNT(dCliente[customer_unique_id]),
+			    CROSSFILTER(fPedidos[customer_id], dCliente[customer_id], BOTH),
+			    fPedidos[pedido_valido] = TRUE()
+			)
+		formatString: #,0
+		lineageTag: 69fa9f48-82f6-5136-99a4-bfc11bd544ad
+
+	/// Pedidos com order_delivered_customer_date não nula.
+	measure 'Pedidos entregues' = CALCULATE(COUNTROWS(fPedidos), fPedidos[entregue] = TRUE())
+		formatString: #,0
+		lineageTag: d82f0efb-e20d-5532-be20-f376bac4ecec
+
+	/// Pedidos entregues depois de order_estimated_delivery_date.
+	measure 'Pedidos atrasados' = CALCULATE(COUNTROWS(fPedidos), fPedidos[atrasado] = TRUE())
+		formatString: #,0
+		lineageTag: 4bbdb4ab-16a0-5295-ba3a-ff9f5b027f12
+
+	/// Pedidos atrasados sobre pedidos entregues.
+	measure '% pedidos atrasados' = DIVIDE([Pedidos atrasados], [Pedidos entregues])
+		formatString: 0.0%
+		lineageTag: f1c4fc17-c893-5a49-ae8f-da3a79547034
+
+	/// Média, em dias, entre a data da compra e a data da entrega, só pedidos entregues.
+	measure 'Prazo médio de entrega (dias)' = AVERAGE(fPedidos[prazo_entrega_dias])
+		formatString: 0.0
+		lineageTag: b54d5628-a1b6-5302-b056-6bff837ca292
+
+	/// Média de review_score.
+	measure 'Nota média' = AVERAGE(fAvaliacoes[review_score])
+		formatString: 0.00
+		lineageTag: c784e681-ed21-5621-a99d-73781a0c7e81
+
+	/// Número de avaliações.
+	measure Avaliações = COUNTROWS(fAvaliacoes)
+		formatString: #,0
+		lineageTag: 658ee536-59eb-52d7-bd46-73f1cff9b015
+
+	column Coluna
+		dataType: string
+		isHidden
+		lineageTag: 07b207be-dc2e-5cac-a203-8fa55e36e33e
+		summarizeBy: none
+		sourceColumn: [Coluna]
+
+		annotation SummarizationSetBy = User
+
+	partition Medidas = calculated
+		mode: import
+		source = ROW("Coluna", BLANK())
+
+	annotation PBI_Id = 4accf51203dc5e1ba09d3359ef33e192
+

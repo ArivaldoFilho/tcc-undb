@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "visao_geral_v09",
+  "position": {
+    "x": 853.33333333333337,
+    "y": 80,
+    "z": 9000,
+    "width": 198.33333333333334,
+    "height": 100,
+    "tabOrder": 9000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Medidas"
+                    }
+                  },
+                  "Property": "Nota média"
+                }
+              },
+              "queryRef": "Medidas.Nota média",
+              "nativeQueryRef": "Nota média"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

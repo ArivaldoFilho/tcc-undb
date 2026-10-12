@@ -1,0 +1,47 @@
+/// Dimensão cliente (customer_id do pedido).
+table dCliente
+	lineageTag: dfaf5a13-0edb-5b6b-94d7-74795f778f5d
+
+	column customer_id
+		dataType: string
+		isHidden
+		lineageTag: 56c4bacc-f137-5191-a125-3d5cbd4638f2
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = User
+
+	column customer_unique_id
+		dataType: string
+		isHidden
+		lineageTag: 641b8b20-3c72-58c5-9af7-2412b5a23c5c
+		summarizeBy: none
+		sourceColumn: customer_unique_id
+
+		annotation SummarizationSetBy = User
+
+	column cidade
+		dataType: string
+		lineageTag: 6c36f65b-9d5e-53ae-a7f7-3453890de27f
+		summarizeBy: none
+		sourceColumn: cidade
+
+		annotation SummarizationSetBy = User
+
+	column uf
+		dataType: string
+		lineageTag: db83c5ce-4e2e-554e-ada7-b7148e47edaa
+		summarizeBy: none
+		sourceColumn: uf
+
+		annotation SummarizationSetBy = User
+
+	partition dCliente = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database(Servidor, Banco, [Query = "SELECT customer_id, customer_unique_id, customer_city AS cidade, customer_state AS uf#(lf)FROM olist.customers"]),
+				    Tipos = Table.TransformColumnTypes(Fonte, {{"customer_id", type text}, {"customer_unique_id", type text}, {"cidade", type text}, {"uf", type text}})
+				in
+				    Tipos
+

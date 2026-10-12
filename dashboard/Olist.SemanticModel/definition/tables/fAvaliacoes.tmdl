@@ -1,0 +1,61 @@
+/// Fato: um registro por avaliação.
+table fAvaliacoes
+	lineageTag: 1acfba63-d09a-55f8-800e-1a57ece139cd
+
+	column review_id
+		dataType: string
+		isHidden
+		lineageTag: 898ebdb5-6be1-5a9d-91d3-394bf74f8572
+		summarizeBy: none
+		sourceColumn: review_id
+
+		annotation SummarizationSetBy = User
+
+	column order_id
+		dataType: string
+		isHidden
+		lineageTag: 17047cad-facc-5105-973d-c370ccadfb29
+		summarizeBy: none
+		sourceColumn: order_id
+
+		annotation SummarizationSetBy = User
+
+	column customer_id
+		dataType: string
+		isHidden
+		lineageTag: af5ef28c-4bfb-55af-85c6-d50d303523c7
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = User
+
+	column data_compra
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 1c653121-7eb9-5895-82cc-e8a7a26c06ea
+		summarizeBy: none
+		sourceColumn: data_compra
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column review_score
+		dataType: int64
+		formatString: 0
+		lineageTag: 26c14a3d-a51d-5716-b355-f33faf38cc30
+		summarizeBy: none
+		sourceColumn: review_score
+
+		annotation SummarizationSetBy = User
+
+	partition fAvaliacoes = m
+		mode: import
+		source =
+				let
+				    Fonte = PostgreSQL.Database(Servidor, Banco, [Query = "-- Fato avaliações: um registro por avaliação (review_id, order_id).#(lf)SELECT#(lf)    r.review_id,#(lf)    r.order_id,#(lf)    o.customer_id,#(lf)    o.order_purchase_timestamp::date AS data_compra,#(lf)    r.review_score#(lf)FROM olist.order_reviews r#(lf)JOIN olist.orders o ON o.order_id = r.order_id"]),
+				    Tipos = Table.TransformColumnTypes(Fonte, {{"review_id", type text}, {"order_id", type text}, {"customer_id", type text}, {"data_compra", type date}, {"review_score", Int64.Type}})
+				in
+				    Tipos
+

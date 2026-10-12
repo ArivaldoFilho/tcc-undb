@@ -1,0 +1,12 @@
+/// Servidor do PostgreSQL (Supabase, session pooler).
+expression Servidor = "aws-0-us-east-1.pooler.supabase.com:5432" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 98227888-f668-5ad0-806a-b6f7083924ed
+
+	annotation PBI_ResultType = Text
+
+/// Banco de dados.
+expression Banco = "postgres" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: a8b0fbfb-c7e9-51ac-8c09-d90e0cefd97a
+
+	annotation PBI_ResultType = Text
+

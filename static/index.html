@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indaga</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --fundo: #f6f5f2; --cartao: #ffffff; --texto: #1d1d1b; --suave: #6b6a65;
+    --borda: #e3e1db; --destaque: #1f5f8b; --destaque-texto: #ffffff;
+    --ok: #2f7a4f; --alerta: #9a6a00; --erro: #a33a2f; --codigo: #f0eee8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fundo: #161615; --cartao: #1f1f1d; --texto: #ecebe6; --suave: #a3a19a;
+      --borda: #34332f; --destaque: #6fb0dc; --destaque-texto: #0d1b26;
+      --ok: #6cc093; --alerta: #e0b04a; --erro: #e98276; --codigo: #2a2926;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fundo); color: var(--texto);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 1.6rem; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--suave); font-size: .85rem; }
+  form { margin: 20px 0 28px; display: grid; gap: 10px; }
+  textarea { width: 100%; min-height: 84px; resize: vertical; padding: 12px 14px; font: inherit;
+             color: var(--texto); background: var(--cartao); border: 1px solid var(--borda); border-radius: 10px; }
+  textarea:focus, input:focus { outline: 2px solid var(--destaque); outline-offset: 1px; }
+  .linha { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  input { padding: 8px 10px; font: inherit; font-size: .9rem; color: var(--texto); background: var(--cartao);
+          border: 1px solid var(--borda); border-radius: 8px; width: 170px; }
+  label.check { font-size: .9rem; color: var(--suave); display: flex; gap: 6px; align-items: center; }
+  button { margin-left: auto; padding: 10px 22px; font: inherit; font-weight: 600; border: 0; border-radius: 10px;
+           background: var(--destaque); color: var(--destaque-texto); cursor: pointer; }
+  button:disabled { opacity: .55; cursor: wait; }
+  .resposta { background: var(--cartao); border: 1px solid var(--borda); border-radius: 12px; padding: 20px; margin-bottom: 18px; }
+  .pergunta { font-weight: 600; margin: 0 0 10px; }
+  .selo { display: inline-block; font-size: .75rem; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+          border: 1px solid currentColor; margin-bottom: 10px; }
+  .selo.sql { color: var(--ok); } .selo.sem_dados, .selo.esclarecimento { color: var(--alerta); }
+  .selo.conversa { color: var(--destaque); } .selo.erro { color: var(--erro); }
+  .texto { margin: 0 0 12px; white-space: pre-wrap; }
+  .suposicoes { font-size: .9rem; color: var(--suave); margin: 0 0 14px; padding-left: 18px; }
+  .suposicoes-titulo { font-size: .8rem; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 4px; }
+  .grafico { position: relative; height: 300px; margin: 8px 0 16px; }
+  .tabela { overflow-x: auto; border: 1px solid var(--borda); border-radius: 8px; max-height: 360px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid var(--borda); text-align: left; white-space: nowrap; }
+  th { position: sticky; top: 0; background: var(--codigo); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  details { margin-top: 12px; font-size: .9rem; }
+  summary { cursor: pointer; color: var(--suave); }
+  pre { background: var(--codigo); padding: 12px; border-radius: 8px; overflow-x: auto; font-size: .82rem; white-space: pre-wrap; }
+  .metricas { margin-top: 12px; font-size: .78rem; color: var(--suave); font-variant-numeric: tabular-nums; }
+  .erro-texto { color: var(--erro); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Indaga</h1>
+    <span class="sub" id="config">carregando configuração…</span>
+  </header>
+
+  <form id="form">
+    <textarea id="pergunta" placeholder="Pergunte sobre as vendas. Ex.: qual foi o faturamento por mês em 2017?" required></textarea>
+    <div class="linha">
+      <input id="participante" placeholder="Código do participante" autocomplete="off">
+      <input id="senha" type="password" placeholder="Senha de acesso" hidden>
+      <label class="check"><input type="checkbox" id="narrativa" checked style="width:auto"> gerar explicação</label>
+      <button id="enviar" type="submit">Perguntar</button>
+    </div>
+  </form>
+
+  <section id="respostas"></section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
+const ROTULOS = { sql: "consulta executada", sem_dados: "dados indisponíveis",
+                  esclarecimento: "pedido de esclarecimento", conversa: "conversa", erro: "erro" };
+// Modo estudo: aberto pela página /estudo com o token do participante e a
+// pergunta em andamento. Esconde os campos técnicos e registra se o SQL foi aberto.
+const PARAMS = new URLSearchParams(location.search);
+const ESTUDO = { token: PARAMS.get("estudo"), pergunta: PARAMS.get("pergunta") };
+
+function guardar(chave, valor) { try { sessionStorage.setItem(chave, valor); } catch (e) {} }
+function ler(chave) { try { return sessionStorage.getItem(chave) || ""; } catch (e) { return ""; } }
+
+function el(tag, attrs = {}, filhos = []) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  for (const f of filhos) if (f) n.append(f);
+  return n;
+}
+
+function ehNumerica(linhas, i) {
+  const vals = linhas.map((l) => l[i]).filter((v) => v !== null && v !== "");
+  return vals.length > 0 && vals.every((v) => typeof v === "number");
+}
+
+function montarTabela(colunas, linhas) {
+  const numericas = colunas.map((_, i) => ehNumerica(linhas, i));
+  const thead = el("thead", {}, [el("tr", {}, colunas.map((c) => el("th", { text: c })))]);
+  const tbody = el("tbody", {}, linhas.map((l) => el("tr", {}, l.map((v, i) =>
+    el("td", { class: numericas[i] ? "num" : "", text: v === null ? "—" : numericas[i] ? fmt.format(v) : String(v) })))));
+  return el("div", { class: "tabela" }, [el("table", {}, [thead, tbody])]);
+}
+
+// Gráfico por heurística, sem chamada ao modelo: primeira coluna de texto como
+// rótulo e até duas colunas numéricas como séries.
+function montarGrafico(colunas, linhas) {
+  if (linhas.length < 2 || typeof Chart === "undefined") return null;
+  const numericas = colunas.map((_, i) => ehNumerica(linhas, i));
+  const rotulo = numericas.findIndex((n) => !n);
+  const series = numericas.map((n, i) => (n ? i : -1)).filter((i) => i >= 0).slice(0, 2);
+  if (rotulo < 0 || series.length === 0) return null;
+  const temporal = linhas.every((l) => /^\d{4}(-\d{2})?(-\d{2})?/.test(String(l[rotulo])));
+  const horizontal = !temporal && linhas.length > 8;
+  const caixa = el("div", { class: "grafico" }, [el("canvas")]);
+  const css = getComputedStyle(document.documentElement);
+  const cores = [css.getPropertyValue("--destaque").trim(), css.getPropertyValue("--alerta").trim()];
+  const dados = linhas.slice(0, 40);
+  requestAnimationFrame(() => new Chart(caixa.firstChild, {
+    type: temporal ? "line" : "bar",
+    data: {
+      labels: dados.map((l) => String(l[rotulo])),
+      datasets: series.map((i, k) => ({
+        label: colunas[i], data: dados.map((l) => l[i]),
+        backgroundColor: cores[k], borderColor: cores[k], yAxisID: k === 0 ? "y" : "y1",
+      })),
+    },
+    options: {
+      maintainAspectRatio: false, indexAxis: horizontal ? "y" : "x",
+      scales: series.length > 1 && !horizontal
+        ? { y: { position: "left" }, y1: { position: "right", grid: { drawOnChartArea: false } } } : {},
+      plugins: { legend: { display: series.length > 1 } },
+    },
+  }));
+  return caixa;
+}
+
+function montarResposta(r) {
+  const tipo = r.erro && !r.sucesso ? "erro" : r.decisao;
+  const m = r.metricas || {};
+  const cartao = el("article", { class: "resposta" }, [
+    el("p", { class: "pergunta", text: r.pergunta }),
+    el("span", { class: `selo ${tipo}`, text: ROTULOS[tipo] || tipo }),
+  ]);
+  if (r.erro && !r.sucesso) cartao.append(el("p", { class: "texto erro-texto", text: r.erro }));
+  if (r.mensagem) cartao.append(el("p", { class: "texto", text: r.mensagem }));
+  if (r.narrativa) cartao.append(el("p", { class: "texto", text: r.narrativa }));
+  if (r.suposicoes && r.suposicoes.length) {
+    cartao.append(el("p", { class: "suposicoes-titulo", text: "Suposições adotadas" }));
+    cartao.append(el("ul", { class: "suposicoes" }, r.suposicoes.map((s) => el("li", { text: s }))));
+  }
+  if (r.colunas && r.colunas.length) {
+    cartao.append(montarGrafico(r.colunas, r.linhas));
+    cartao.append(montarTabela(r.colunas, r.linhas));
+    if (r.truncado) cartao.append(el("p", { class: "metricas", text: "Resultado truncado no limite do sistema." }));
+  }
+  if (r.sql) {
+    const det = el("details", {}, [el("summary", { text: "Ver o SQL gerado" }), el("pre", { text: r.sql })]);
+    if (ESTUDO.token) det.addEventListener("toggle", () => { if (det.open) registrarAbriuSql(r.id); }, { once: true });
+    cartao.append(det);
+  }
+  if (m.tempo_total_ms == null || ESTUDO.token) return cartao;
+  const custo = m.custo_usd != null ? ` · US$ ${Number(m.custo_usd).toFixed(4)}` : "";
+  cartao.append(el("p", { class: "metricas",
+    text: `${(m.tempo_total_ms / 1000).toFixed(1)} s · ${m.tokens_entrada} tokens de entrada, ${m.tokens_saida} de saída${custo} · tentativas: ${r.tentativas || 0} · registro #${r.id ?? "não gravado"}` }));
+  return cartao;
+}
+
+function registrarAbriuSql(execucaoId) {
+  fetch("/api/estudo/evento", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Estudo-Token": ESTUDO.token },
+    body: JSON.stringify({ pergunta_id: ESTUDO.pergunta, tipo: "abriu_sql", execucao_id: execucaoId ?? null }),
+  }).catch(() => {});
+}
+
+async function carregarConfig() {
+  try {
+    const c = await (await fetch("/api/config")).json();
+    $("config").textContent = `${c.modelo} · esforço ${c.esforco} · config ${c.config_hash}`;
+    if (c.exige_senha) { $("senha").hidden = false; $("senha").value = ler("indaga_senha"); }
+  } catch (e) { $("config").textContent = "não foi possível ler a configuração"; }
+}
+
+$("participante").value = ler("indaga_participante");
+$("form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const pergunta = $("pergunta").value.trim();
+  if (!pergunta) return;
+  guardar("indaga_participante", $("participante").value.trim());
+  guardar("indaga_senha", $("senha").value);
+  $("enviar").disabled = true; $("enviar").textContent = "Consultando…";
+  try {
+    const headers = { "Content-Type": "application/json" };
+    if (ESTUDO.token) headers["X-Estudo-Token"] = ESTUDO.token; else headers["X-Senha"] = $("senha").value;
+    const resp = await fetch("/api/perguntar", {
+      method: "POST", headers,
+      body: JSON.stringify({ pergunta, participante: $("participante").value.trim() || null,
+                             narrativa: ESTUDO.token ? true : $("narrativa").checked,
+                             estudo_pergunta_id: ESTUDO.pergunta }),
+    });
+    const r = await resp.json();
+    if (!resp.ok) throw new Error(r.detail || `HTTP ${resp.status}`);
+    $("respostas").prepend(montarResposta(r));
+    $("pergunta").value = "";
+  } catch (e) {
+    $("respostas").prepend(montarResposta({ pergunta, erro: String(e.message || e), sucesso: false, metricas: {} }));
+  } finally {
+    $("enviar").disabled = false; $("enviar").textContent = "Perguntar";
+  }
+});
+if (ESTUDO.token) {
+  for (const id of ["participante", "senha", "config"]) $(id).hidden = true;
+  $("narrativa").closest("label").style.display = "none";
+  document.querySelector("main").style.paddingTop = "16px";
+} else {
+  carregarConfig();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+relationship 6759e820-c5bb-5569-b897-f5282c92e50f
+	fromColumn: fItens.data_compra
+	toColumn: dCalendario.Data
+
+relationship a0a19cb7-3149-562e-b032-069a11d950a4
+	fromColumn: fItens.customer_id
+	toColumn: dCliente.customer_id
+
+relationship d1c193c2-e8f6-53e8-97fc-d05be2252162
+	fromColumn: fItens.product_id
+	toColumn: dProduto.product_id
+
+relationship d8106101-cbcb-590a-bca6-8a7679375fde
+	fromColumn: fItens.seller_id
+	toColumn: dVendedor.seller_id
+
+relationship 4e293dda-12ad-5d33-a61b-fd3f56194481
+	fromColumn: fPedidos.data_compra
+	toColumn: dCalendario.Data
+
+relationship 74bd7ba0-3281-5911-ad0a-f4f5cadff239
+	fromColumn: fPedidos.customer_id
+	toColumn: dCliente.customer_id
+
+relationship 7b9d6c28-3b45-582c-9b30-ef0e6a309ee7
+	fromColumn: fAvaliacoes.data_compra
+	toColumn: dCalendario.Data
+
+relationship ee8b689f-a165-5c4b-8c3e-79b8306b304c
+	fromColumn: fAvaliacoes.customer_id
+	toColumn: dCliente.customer_id
+

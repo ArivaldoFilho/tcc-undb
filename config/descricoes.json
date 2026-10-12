@@ -1,0 +1,129 @@
+{
+  "_leia_me": "Camada semântica do Indaga. As 'definicoes' precisam ser IDÊNTICAS às medidas DAX do dashboard no Power BI, senão a comparação mede definições diferentes e não abordagens diferentes. Toda alteração neste arquivo muda o config_hash: congele antes do experimento. Registre o tempo gasto editando este arquivo como esforço de configuração da Solução B.",
+  "tabelas": {
+    "orders": {
+      "descricao": "Pedidos. Uma linha por pedido.",
+      "colunas": {
+        "order_id": "identificador do pedido (chave primária)",
+        "customer_id": "identificador do cliente NESTE pedido; liga com customers.customer_id",
+        "order_status": "situação do pedido: delivered, shipped, canceled, unavailable, invoiced, processing, created, approved",
+        "order_purchase_timestamp": "data e hora da compra; é a data de referência do pedido",
+        "order_approved_at": "data e hora da aprovação do pagamento",
+        "order_delivered_carrier_date": "data em que o pedido foi entregue à transportadora",
+        "order_delivered_customer_date": "data em que o cliente recebeu o pedido (nula se não entregue)",
+        "order_estimated_delivery_date": "data de entrega prometida ao cliente na compra"
+      }
+    },
+    "order_items": {
+      "descricao": "Itens dos pedidos. Uma linha por item; um pedido pode ter vários itens, inclusive de vendedores diferentes.",
+      "colunas": {
+        "order_id": "pedido ao qual o item pertence",
+        "order_item_id": "número sequencial do item dentro do pedido (1, 2, 3...)",
+        "product_id": "produto vendido",
+        "seller_id": "vendedor que vendeu o item",
+        "shipping_limit_date": "prazo para o vendedor despachar o item",
+        "price": "preço do item em reais, sem frete",
+        "freight_value": "valor do frete do item em reais"
+      }
+    },
+    "order_payments": {
+      "descricao": "Pagamentos dos pedidos. Um pedido pode ter mais de um pagamento (ex.: cartão + voucher).",
+      "colunas": {
+        "order_id": "pedido pago",
+        "payment_sequential": "sequência do pagamento dentro do pedido",
+        "payment_type": "forma de pagamento: credit_card, boleto, voucher, debit_card, not_defined",
+        "payment_installments": "número de parcelas",
+        "payment_value": "valor pago nesta forma de pagamento, em reais (inclui frete)"
+      }
+    },
+    "order_reviews": {
+      "descricao": "Avaliações feitas pelos clientes após a entrega.",
+      "colunas": {
+        "review_id": "identificador da avaliação (pode se repetir; não é chave)",
+        "order_id": "pedido avaliado",
+        "review_score": "nota de 1 a 5",
+        "review_comment_title": "título do comentário (geralmente vazio)",
+        "review_comment_message": "texto do comentário (frequentemente vazio)",
+        "review_creation_date": "data em que a pesquisa de avaliação foi enviada ao cliente",
+        "review_answer_timestamp": "data e hora em que o cliente respondeu"
+      }
+    },
+    "customers": {
+      "descricao": "Clientes. Uma linha por customer_id, que é gerado a cada pedido.",
+      "colunas": {
+        "customer_id": "identificador do cliente no pedido (chave primária)",
+        "customer_unique_id": "identificador da PESSOA; o mesmo cliente que compra duas vezes tem dois customer_id e um único customer_unique_id",
+        "customer_zip_code_prefix": "cinco primeiros dígitos do CEP do cliente",
+        "customer_city": "cidade do cliente",
+        "customer_state": "UF do cliente (sigla, ex.: SP, RJ, MA)"
+      }
+    },
+    "sellers": {
+      "descricao": "Vendedores parceiros do marketplace.",
+      "colunas": {
+        "seller_id": "identificador do vendedor (chave primária)",
+        "seller_zip_code_prefix": "cinco primeiros dígitos do CEP do vendedor",
+        "seller_city": "cidade do vendedor",
+        "seller_state": "UF do vendedor (sigla)"
+      }
+    },
+    "products": {
+      "descricao": "Produtos. Não há nome do produto, só a categoria e medidas físicas.",
+      "colunas": {
+        "product_id": "identificador do produto (chave primária)",
+        "product_category_name": "categoria do produto em português, com underscores (ex.: cama_mesa_banho)",
+        "product_name_lenght": "quantidade de caracteres do nome do produto (o nome da coluna tem erro de grafia na base original)",
+        "product_description_lenght": "quantidade de caracteres da descrição (o nome da coluna tem erro de grafia na base original)",
+        "product_photos_qty": "quantidade de fotos no anúncio",
+        "product_weight_g": "peso em gramas",
+        "product_length_cm": "comprimento em centímetros",
+        "product_height_cm": "altura em centímetros",
+        "product_width_cm": "largura em centímetros"
+      }
+    },
+    "product_category_name_translation": {
+      "descricao": "Tradução das categorias de produto para o inglês.",
+      "colunas": {
+        "product_category_name": "categoria em português",
+        "product_category_name_english": "categoria em inglês"
+      }
+    },
+    "geolocation": {
+      "descricao": "Coordenadas por prefixo de CEP. Há várias linhas por prefixo.",
+      "colunas": {
+        "geolocation_zip_code_prefix": "cinco primeiros dígitos do CEP",
+        "geolocation_lat": "latitude",
+        "geolocation_lng": "longitude",
+        "geolocation_city": "cidade",
+        "geolocation_state": "UF"
+      }
+    }
+  },
+  "relacionamentos": [
+    "orders.customer_id = customers.customer_id (cada pedido tem um customer_id)",
+    "order_items.order_id = orders.order_id",
+    "order_items.product_id = products.product_id",
+    "order_items.seller_id = sellers.seller_id",
+    "order_payments.order_id = orders.order_id",
+    "order_reviews.order_id = orders.order_id",
+    "products.product_category_name = product_category_name_translation.product_category_name",
+    "customers.customer_zip_code_prefix e sellers.seller_zip_code_prefix = geolocation.geolocation_zip_code_prefix (várias linhas por prefixo: agregue a geolocalização antes de juntar)"
+  ],
+  "definicoes": [
+    "Pedido válido: order_status diferente de 'canceled' e de 'unavailable'.",
+    "Faturamento: soma de order_items.price dos pedidos válidos, sem frete. O ano ou mês do faturamento é o de orders.order_purchase_timestamp.",
+    "Número de pedidos: contagem de order_id distintos entre os pedidos válidos.",
+    "Ticket médio: faturamento dividido pelo número de pedidos.",
+    "Pedido entregue: order_delivered_customer_date não nula.",
+    "Pedido atrasado: pedido entregue com order_delivered_customer_date maior que order_estimated_delivery_date.",
+    "Prazo de entrega em dias: diferença em dias entre as datas (sem a hora) de order_delivered_customer_date e de order_purchase_timestamp, só para pedidos entregues. Em SQL: order_delivered_customer_date::date - order_purchase_timestamp::date.",
+    "Nota média: média de order_reviews.review_score, uma linha por avaliação. O ano ou mês da nota é o de orders.order_purchase_timestamp do pedido avaliado.",
+    "Cliente único: customer_unique_id. Para contar clientes, use COUNT(DISTINCT customer_unique_id) entre os clientes com pedidos válidos, nunca customer_id.",
+    "Estado do cliente: customers.customer_state. Estado do vendedor: sellers.seller_state."
+  ],
+  "observacoes": [
+    "A base não tem custo de produto, margem, lucro, estoque nem metas de venda.",
+    "Juntar order_items com order_payments diretamente multiplica linhas, porque os dois podem ter várias linhas por pedido. Agregue cada um por order_id antes de juntar.",
+    "Algumas categorias de products não têm tradução em product_category_name_translation, e há produtos sem categoria."
+  ]
+}

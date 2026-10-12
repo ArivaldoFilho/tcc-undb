@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estudo Indaga</title>
+<style>
+  :root {
+    --fundo: #f6f5f2; --cartao: #ffffff; --texto: #1d1d1b; --suave: #6b6a65;
+    --borda: #e3e1db; --destaque: #1f5f8b; --destaque-texto: #ffffff;
+    --ok: #2f7a4f; --alerta: #9a6a00; --erro: #a33a2f; --codigo: #f0eee8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fundo: #161615; --cartao: #1f1f1d; --texto: #ecebe6; --suave: #a3a19a;
+      --borda: #34332f; --destaque: #6fb0dc; --destaque-texto: #0d1b26;
+      --ok: #6cc093; --alerta: #e0b04a; --erro: #e98276; --codigo: #2a2926;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--fundo); color: var(--texto);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .pagina { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.15rem; margin: 28px 0 8px; }
+  p { margin: 0 0 12px; }
+  .sub { color: var(--suave); font-size: .9rem; }
+  .cartao { background: var(--cartao); border: 1px solid var(--borda); border-radius: 12px; padding: 20px 22px; margin: 18px 0; }
+  .termo { max-height: 52vh; overflow-y: auto; font-size: .93rem; }
+  .termo h3 { font-size: .95rem; margin: 14px 0 4px; }
+  .acoes { display: flex; gap: 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: 18px; }
+  button { padding: 10px 22px; font: inherit; font-weight: 600; border: 0; border-radius: 10px;
+           background: var(--destaque); color: var(--destaque-texto); cursor: pointer; }
+  button:disabled { opacity: .55; cursor: wait; }
+  button.secundario { background: transparent; color: var(--destaque); border: 1px solid var(--borda); }
+  .erro { color: var(--erro); font-size: .9rem; min-height: 1.2em; margin: 8px 0 0; }
+  .aviso { border-left: 3px solid var(--alerta); padding: 8px 12px; background: var(--codigo); border-radius: 0 8px 8px 0; font-size: .92rem; }
+  .selo { display: inline-block; font-size: .75rem; font-weight: 600; padding: 2px 9px; border-radius: 99px;
+          border: 1px solid currentColor; color: var(--alerta); margin-left: 8px; vertical-align: middle; }
+  fieldset { border: 0; padding: 0; margin: 0 0 18px; }
+  legend { font-weight: 600; margin-bottom: 6px; padding: 0; }
+  .opcoes { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .opcoes label, label.check { display: flex; gap: 7px; align-items: center; font-size: .95rem; cursor: pointer; }
+  input[type=text], textarea { width: 100%; padding: 9px 11px; font: inherit; color: var(--texto); background: var(--cartao);
+                               border: 1px solid var(--borda); border-radius: 8px; }
+  textarea { min-height: 90px; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--destaque); outline-offset: 1px; }
+  .escala { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; text-align: center; font-size: .78rem; color: var(--suave); }
+  .escala label { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+  .sus-item { padding: 12px 0; border-bottom: 1px solid var(--borda); }
+  .sus-item:last-child { border-bottom: 0; }
+  .sus-item p { margin: 0 0 8px; font-size: .95rem; }
+
+  /* Tela da pergunta: ferramenta à esquerda, resposta à direita. */
+  .tarefa { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+  .tarefa-topo { padding: 12px 20px; border-bottom: 1px solid var(--borda); background: var(--cartao); }
+  .tarefa-topo .progresso { font-size: .8rem; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; }
+  .tarefa-topo .enunciado { font-size: 1.15rem; font-weight: 600; margin: 2px 0 0; }
+  .tarefa-corpo { display: grid; grid-template-columns: 1fr 340px; min-height: 0; }
+  .ferramenta { border: 0; width: 100%; height: 100%; background: var(--fundo); }
+  .painel { border-left: 1px solid var(--borda); background: var(--cartao); padding: 18px; overflow-y: auto; }
+  .painel fieldset { margin-bottom: 16px; }
+  .painel .opcoes { flex-direction: column; gap: 6px; }
+  .ajuda { font-size: .8rem; color: var(--suave); margin: 4px 0 0; }
+  .so-celular { display: none; }
+  @media (max-width: 900px) {
+    .tarefa-corpo { grid-template-columns: 1fr; grid-template-rows: 60vh auto; }
+    .painel { border-left: 0; border-top: 1px solid var(--borda); }
+    .tarefa { height: auto; }
+    .so-celular { display: block; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ── Infraestrutura ────────────────────────────────────────────────────────
+const NOMES = { dashboard: "Painel (Power BI)", indaga: "Assistente de IA (Indaga)" };
+const PARAMS = new URLSearchParams(location.search);
+const PILOTO = PARAMS.get("piloto") === "1";
+const app = document.getElementById("app");
+// ?novo=1 começa uma sessão nova neste navegador (testes e piloto).
+if (PARAMS.get("novo") === "1") guardar("estudo_token", null);
+let TOKEN = guardado("estudo_token");
+let ESTADO = null;
+let TERMO = null;
+
+function guardado(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+// Marcas locais por participante, para não misturar duas pessoas no mesmo navegador.
+function chave(...partes) { return ["estudo", TOKEN.slice(0, 12), ...partes].join("_"); }
+function guardar(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+
+function el(tag, attrs = {}, filhos = []) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (v === true) n.setAttribute(k, "");
+    else if (v !== false && v != null) n.setAttribute(k, v);
+  }
+  for (const f of [].concat(filhos)) if (f != null && f !== false) n.append(f);
+  return n;
+}
+
+async function api(caminho, corpo) {
+  const opcoes = { headers: { "Content-Type": "application/json" } };
+  if (TOKEN) opcoes.headers["X-Estudo-Token"] = TOKEN;
+  if (corpo !== undefined) { opcoes.method = "POST"; opcoes.body = JSON.stringify(corpo); }
+  const resp = await fetch(caminho, opcoes);
+  const dados = await resp.json().catch(() => ({}));
+  if (!resp.ok) { const e = new Error(dados.detail || `Erro ${resp.status}`); e.status = resp.status; throw e; }
+  return dados;
+}
+
+function tela(...filhos) {
+  app.replaceChildren(el("main", { class: "pagina" }, filhos));
+  window.scrollTo(0, 0);
+}
+
+function botaoEnviar(rotulo, acao) {
+  const erro = el("p", { class: "erro", role: "alert" });
+  const botao = el("button", { type: "button", text: rotulo });
+  botao.addEventListener("click", async () => {
+    erro.textContent = "";
+    botao.disabled = true;
+    try { await acao(); } catch (e) { erro.textContent = e.message || String(e); botao.disabled = false; }
+  });
+  return [el("div", { class: "acoes" }, [botao]), erro];
+}
+
+function radios(nome, opcoes) {
+  return el("div", { class: "opcoes" }, opcoes.map(([valor, rotulo]) =>
+    el("label", {}, [el("input", { type: "radio", name: nome, value: valor }), rotulo])));
+}
+
+function valor(nome) {
+  const marcado = document.querySelector(`input[name="${nome}"]:checked`);
+  return marcado ? marcado.value : null;
+}
+
+function escala(nome, minimo, maximo) {
+  return el("div", { class: "escala" }, [1, 2, 3, 4, 5].map((n) => el("label", {}, [
+    el("input", { type: "radio", name: nome, value: String(n) }),
+    el("span", { text: n === 1 ? `1 ${minimo}` : n === 5 ? `5 ${maximo}` : String(n) }),
+  ])));
+}
+
+function seloPiloto() { return (PILOTO || (ESTADO && ESTADO.piloto)) ? el("span", { class: "selo", text: "piloto" }) : null; }
+
+// ── Roteamento: decide a próxima tela a partir do estado gravado no banco ──
+async function seguir() {
+  if (!TOKEN) return telaInicio();
+  try {
+    ESTADO = await api("/api/estudo/estado");
+  } catch (e) {
+    if (e.status === 401) { guardar("estudo_token", null); TOKEN = ""; return telaInicio(); }
+    return tela(el("h1", { text: "Não foi possível carregar o estudo" }), el("p", { text: e.message }),
+                el("button", { type: "button", text: "Tentar de novo", onclick: seguir }));
+  }
+  if (ESTADO.concluido) return telaObrigado();
+  for (const bloco of ESTADO.plano) {
+    const pendentes = bloco.perguntas.filter((p) => !ESTADO.respondidas.includes(p.id));
+    if (pendentes.length) {
+      if (!guardado(chave("intro", bloco.bloco))) return telaIntroBloco(bloco);
+      const posicao = bloco.perguntas.indexOf(pendentes[0]) + 1;
+      return telaPergunta(bloco, pendentes[0], posicao);
+    }
+    if (!ESTADO.sus.includes(bloco.ferramenta)) return telaSus(bloco);
+  }
+  return telaFinal();
+}
+
+// ── Telas ─────────────────────────────────────────────────────────────────
+function telaInicio() {
+  tela(
+    el("h1", {}, ["Painel ou IA? Um estudo sobre consulta a dados", seloPiloto()]),
+    el("p", { class: "sub", text: "Trabalho de Conclusão de Curso · Engenharia de Software · UNDB" }),
+    el("div", { class: "cartao" }, [
+      el("p", { text: "Você vai responder perguntas de negócio sobre as vendas de um e-commerce brasileiro usando duas ferramentas: um painel do Power BI e um assistente de IA que responde perguntas em português." }),
+      el("p", { text: "São 8 perguntas, 4 em cada ferramenta, um questionário curto sobre cada ferramenta e algumas perguntas de opinião no final. Leva cerca de 30 minutos." }),
+      el("p", { class: "aviso", text: "Use um computador (não o celular), num lugar tranquilo. Se precisar parar, feche a página: ao abrir o mesmo link no mesmo navegador, você continua de onde parou." }),
+    ]),
+    ...botaoEnviar("Começar", telaTermo),
+  );
+}
+
+async function telaTermo() {
+  if (!TERMO) TERMO = (await api("/api/estudo/info")).termo;
+  const t = TERMO;
+  const aceite = el("input", { type: "checkbox", id: "aceite" });
+  tela(
+    el("h1", { text: "Termo de consentimento" }),
+    el("div", { class: "cartao termo" }, [
+      el("p", { text: `Você está sendo convidado(a) a participar da pesquisa "${t.titulo_pesquisa}", desenvolvida por ${t.pesquisador}, estudante de Engenharia de Software do Centro Universitário Unidade de Ensino Superior Dom Bosco (UNDB), sob orientação de ${t.orientador}, como Trabalho de Conclusão de Curso.` }),
+      el("h3", { text: "Objetivo" }),
+      el("p", { text: "Comparar duas formas de consultar dados de vendas: um painel de business intelligence e um assistente de inteligência artificial que responde perguntas em linguagem natural." }),
+      el("h3", { text: "O que você vai fazer" }),
+      el("p", { text: "Responder a um perfil curto, sem nome, e-mail ou documento; responder a 8 perguntas usando as duas ferramentas, 4 em cada; preencher um questionário de usabilidade sobre cada ferramenta; e responder a perguntas finais de opinião. A participação leva cerca de 30 minutos." }),
+      el("h3", { text: "Quais dados são coletados" }),
+      el("p", { text: "Suas respostas, o tempo gasto em cada pergunta, a confiança que você declarar, as perguntas que você digitar no assistente de IA e ações como abrir a consulta SQL. Você é identificado(a) apenas por um código gerado automaticamente. As perguntas digitadas no assistente são processadas por um serviço de IA de terceiros (Anthropic); por isso, não digite informações pessoais." }),
+      el("h3", { text: "Riscos e benefícios" }),
+      el("p", { text: "Os riscos são mínimos, como cansaço ou desconforto ao responder; você pode fazer pausas ou parar quando quiser. Não há benefício direto, mas sua participação ajuda a entender quando usar cada forma de análise." }),
+      el("h3", { text: "Participação voluntária" }),
+      el("p", { text: `A participação é voluntária e não remunerada. Você pode desistir a qualquer momento, sem nenhum prejuízo. Se quiser que seus dados sejam excluídos, envie o seu código de participante para ${t.contato}.` }),
+      el("h3", { text: "Uso dos resultados" }),
+      el("p", { text: `Os resultados serão apresentados de forma agregada, sem identificar participantes, no TCC e em eventuais publicações acadêmicas. Os dados serão guardados ${t.guarda_dados}.` }),
+      el("h3", { text: "Contato" }),
+      el("p", { text: `Dúvidas: ${t.contato}.` }),
+    ]),
+    el("label", { class: "check", for: "aceite" }, [aceite, "Li e entendi as informações acima, tenho 18 anos ou mais e concordo em participar."]),
+    ...botaoEnviar("Continuar", async () => {
+      if (!aceite.checked) throw new Error("Para participar, marque a concordância com o termo.");
+      telaPerfil();
+    }),
+  );
+}
+
+function telaPerfil() {
+  const campos = [
+    ["area", "Qual é a sua área de atuação principal?", [["gestao", "Gestão ou negócios"], ["dados", "Análise de dados ou BI"],
+      ["software", "Desenvolvimento de software"], ["estudante", "Estudante"], ["outra", "Outra"]]],
+    ["decide_com_relatorios", "No trabalho, você usa relatórios ou painéis para tomar decisões?", [["sim", "Sim"], ["nao", "Não"]]],
+    ["experiencia_bi", "Experiência com Power BI ou outras ferramentas de BI:", [["nenhuma", "Nenhuma"], ["basica", "Básica"], ["intermediaria", "Intermediária"], ["avancada", "Avançada"]]],
+    ["experiencia_sql", "Experiência com SQL:", [["nenhuma", "Nenhuma"], ["basica", "Básica"], ["intermediaria", "Intermediária"], ["avancada", "Avançada"]]],
+    ["uso_ia", "Com que frequência você usa IA generativa (ChatGPT, Claude, Gemini...)?", [["nunca", "Nunca"], ["raramente", "Raramente"], ["semanal", "Toda semana"], ["diario", "Todo dia"]]],
+  ];
+  tela(
+    el("h1", { text: "Seu perfil" }),
+    el("p", { class: "sub", text: "Nenhuma informação que identifique você é pedida." }),
+    el("div", { class: "cartao" }, campos.map(([nome, rotulo, opcoes]) =>
+      el("fieldset", {}, [el("legend", { text: rotulo }), radios(nome, opcoes)]))),
+    ...botaoEnviar("Começar as perguntas", async () => {
+      const perfil = {};
+      for (const [nome] of campos) {
+        perfil[nome] = valor(nome);
+        if (!perfil[nome]) throw new Error("Responda todas as perguntas do perfil.");
+      }
+      const r = await api("/api/estudo/iniciar", { consentimento: true, perfil, piloto: PILOTO });
+      TOKEN = r.token;
+      guardar("estudo_token", TOKEN);
+      await seguir();
+    }),
+  );
+}
+
+function telaIntroBloco(bloco) {
+  const textos = bloco.ferramenta === "dashboard" ? [
+    "Nesta parte você vai usar um painel do Power BI sobre as vendas de um e-commerce brasileiro (base pública Olist, de 2016 a 2018).",
+    "O painel tem três páginas, que você troca pelas abas na parte de baixo: Visão geral, Vendas e Entrega e satisfação. Use os filtros no topo de cada página (ano, mês, estado...). Passe o mouse sobre os gráficos para ver os valores.",
+  ] : [
+    "Nesta parte você vai usar um assistente de IA que responde, em português, perguntas sobre a mesma base de vendas.",
+    "Escreva a pergunta na caixa de texto (pode copiar a pergunta do topo da tela ou reformular). A resposta traz um texto, uma tabela, as suposições adotadas pelo assistente e a consulta SQL que ele executou. Você pode fazer mais de uma consulta para a mesma pergunta. Cada resposta pode levar de 10 a 60 segundos.",
+    "Não digite dados pessoais: as perguntas são processadas por um serviço de IA externo.",
+  ];
+  tela(
+    el("p", { class: "sub", text: `Parte ${bloco.bloco} de 2` }),
+    el("h1", {}, [NOMES[bloco.ferramenta], seloPiloto()]),
+    el("div", { class: "cartao" }, [
+      ...textos.map((t) => el("p", { text: t })),
+      el("p", { class: "aviso", text: "Responda apenas com o que encontrar nesta ferramenta. Não use outras fontes, como planilhas, buscadores ou outros chats de IA. Se a ferramenta não permitir responder, diga isso: essa também é uma resposta válida." }),
+    ]),
+    el("p", { text: `São ${bloco.perguntas.length} perguntas. O tempo de cada uma é medido, mas responda no seu ritmo normal.` }),
+    ...botaoEnviar("Ir para a primeira pergunta", async () => { guardar(chave("intro", bloco.bloco), "1"); await seguir(); }),
+  );
+}
+
+function telaPergunta(bloco, pergunta, posicao) {
+  const chaveInicio = chave("inicio", pergunta.id), chaveCarga = chave("carga", pergunta.id);
+  if (!guardado(chaveInicio)) guardar(chaveInicio, String(Date.now()));
+  const src = bloco.ferramenta === "dashboard"
+    ? ESTADO.dashboard_url
+    : `/?estudo=${encodeURIComponent(TOKEN)}&pergunta=${encodeURIComponent(pergunta.id)}`;
+  const frame = el("iframe", { class: "ferramenta", src, title: NOMES[bloco.ferramenta], allowfullscreen: true });
+  // O tempo da tarefa começa quando a ferramenta termina de carregar, para que a
+  // demora de carga do Power BI não pese contra o painel.
+  frame.addEventListener("load", () => { if (!guardado(chaveCarga)) guardar(chaveCarga, String(Date.now())); }, { once: true });
+
+  const resposta = el("input", { type: "text", id: "resposta", autocomplete: "off", placeholder: "Ex.: R$ 1,2 mi · 53.532 · 6,6%" });
+  const caixaResposta = el("div", { hidden: true }, [
+    el("label", { for: "resposta", text: "Resposta encontrada", style: "font-weight:600;display:block;margin-bottom:6px" }), resposta,
+    el("p", { class: "ajuda", text: "Escreva o valor como aparece na ferramenta." }),
+  ]);
+  const blocoConfianca = el("fieldset", { hidden: true }, [
+    el("legend", { text: "Quanto você confia nessa resposta?" }), escala("confianca", "nenhuma", "total")]);
+  const blocoConferiu = el("fieldset", { hidden: true }, [
+    el("legend", { text: "Você conferiu a resposta de alguma outra forma?" }),
+    radios("conferiu", [["sim", "Sim"], ["nao", "Não"]])]);
+  const situacao = radios("situacao", [
+    ["respondida", "Encontrei a resposta"],
+    ["sem_dados", "Os dados disponíveis não permitem responder"],
+    ["nao_consegui", "Não consegui encontrar a resposta"],
+  ]);
+  situacao.addEventListener("change", () => {
+    const s = valor("situacao");
+    caixaResposta.hidden = s !== "respondida";
+    blocoConferiu.hidden = s !== "respondida";
+    blocoConfianca.hidden = s === "nao_consegui";
+    if (s === "respondida") resposta.focus();
+  });
+
+  const [acoes, erro] = botaoEnviar("Enviar e seguir", async () => {
+    const s = valor("situacao");
+    if (!s) throw new Error("Escolha uma das opções de resposta.");
+    const conf = valor("confianca"), conferiu = valor("conferiu");
+    if (s === "respondida" && !resposta.value.trim()) throw new Error("Escreva a resposta encontrada.");
+    if (s !== "nao_consegui" && !conf) throw new Error("Informe a sua confiança, de 1 a 5.");
+    if (s === "respondida" && !conferiu) throw new Error("Diga se você conferiu a resposta.");
+    const agora = Date.now();
+    const inicio = Number(guardado(chaveInicio)) || agora, carga = Number(guardado(chaveCarga)) || inicio;
+    await api("/api/estudo/resposta", {
+      pergunta_id: pergunta.id, situacao: s,
+      resposta: s === "respondida" ? resposta.value.trim() : null,
+      confianca: s === "nao_consegui" ? null : Number(conf),
+      conferiu: s === "respondida" ? conferiu === "sim" : null,
+      tempo_ms: agora - carga, tempo_total_ms: agora - inicio,
+    });
+    guardar(chaveInicio, null); guardar(chaveCarga, null);
+    await seguir();
+  });
+
+  app.replaceChildren(el("div", { class: "tarefa" }, [
+    el("div", { class: "tarefa-topo" }, [
+      el("div", { class: "progresso", text: `${NOMES[bloco.ferramenta]} · pergunta ${posicao} de ${bloco.perguntas.length}` }),
+      el("p", { class: "enunciado", text: pergunta.texto }),
+    ]),
+    el("div", { class: "tarefa-corpo" }, [
+      frame,
+      el("aside", { class: "painel" }, [
+        el("p", { class: "aviso so-celular", text: "Este estudo funciona melhor num computador." }),
+        el("fieldset", {}, [el("legend", { text: "Sua resposta" }), situacao]),
+        caixaResposta, blocoConfianca, blocoConferiu, acoes, erro,
+      ]),
+    ]),
+  ]));
+}
+
+const ITENS_SUS = [
+  "Eu acho que gostaria de usar esta ferramenta com frequência.",
+  "Eu achei a ferramenta desnecessariamente complexa.",
+  "Eu achei a ferramenta fácil de usar.",
+  "Eu acho que precisaria da ajuda de uma pessoa com conhecimento técnico para usar esta ferramenta.",
+  "Eu achei que as diversas funções da ferramenta estão bem integradas.",
+  "Eu achei que a ferramenta apresenta muita inconsistência.",
+  "Eu imagino que a maioria das pessoas aprenderia a usar esta ferramenta rapidamente.",
+  "Eu achei a ferramenta muito complicada de usar.",
+  "Eu me senti muito confiante usando a ferramenta.",
+  "Eu precisei aprender muitas coisas antes de conseguir usar esta ferramenta.",
+];
+
+function telaSus(bloco) {
+  tela(
+    el("p", { class: "sub", text: `Parte ${bloco.bloco} de 2 · concluída` }),
+    el("h1", { text: `Sua opinião sobre: ${NOMES[bloco.ferramenta]}` }),
+    el("p", { text: "Marque o quanto você concorda com cada frase, de 1 (discordo totalmente) a 5 (concordo totalmente)." }),
+    el("div", { class: "cartao" }, ITENS_SUS.map((texto, i) => el("div", { class: "sus-item" }, [
+      el("p", { text: `${i + 1}. ${texto}` }), escala(`sus${i}`, "discordo", "concordo")]))),
+    ...botaoEnviar("Enviar", async () => {
+      const itens = ITENS_SUS.map((_, i) => Number(valor(`sus${i}`)));
+      if (itens.some((x) => !x)) throw new Error("Responda todas as 10 frases.");
+      await api("/api/estudo/sus", { ferramenta: bloco.ferramenta, itens });
+      await seguir();
+    }),
+  );
+}
+
+function telaFinal() {
+  const tipos = [
+    ["A", "Perguntas sobre indicadores conhecidos, como o faturamento de um ano"],
+    ["B", "Perguntas que exigem combinar filtros, como um estado num período"],
+    ["C", "Perguntas novas, que cruzam informações, como quantos clientes compraram de novo"],
+    ["D", "Perguntas sobre dados que talvez não existam, como o lucro"],
+  ];
+  const opcoes = [["dashboard", "Painel"], ["indaga", "Assistente de IA"], ["tanto_faz", "Tanto faz"]];
+  const comentarios = el("textarea", { id: "comentarios", placeholder: "Opcional" });
+  tela(
+    el("h1", { text: "Para terminar" }),
+    el("div", { class: "cartao" }, [
+      el("p", { text: "Para cada tipo de pergunta, qual ferramenta você preferiria usar no dia a dia?" }),
+      ...tipos.map(([t, rotulo]) => el("fieldset", {}, [el("legend", { text: rotulo }), radios(`pref_${t}`, opcoes)])),
+      el("fieldset", {}, [el("legend", { text: "Em qual das duas você confiou mais nas respostas?" }),
+        radios("confiou_mais", [["dashboard", "Painel"], ["indaga", "Assistente de IA"], ["igual", "Igualmente"]])]),
+      el("label", { for: "comentarios", text: "Comentários, dificuldades ou sugestões", style: "font-weight:600;display:block;margin-bottom:6px" }),
+      comentarios,
+    ]),
+    ...botaoEnviar("Concluir", async () => {
+      const preferencias = {};
+      for (const [t] of tipos) {
+        preferencias[t] = valor(`pref_${t}`);
+        if (!preferencias[t]) throw new Error("Responda a preferência para os quatro tipos de pergunta.");
+      }
+      preferencias.confiou_mais = valor("confiou_mais");
+      if (!preferencias.confiou_mais) throw new Error("Diga em qual ferramenta você confiou mais.");
+      await api("/api/estudo/concluir", { preferencias, comentarios: comentarios.value });
+      await seguir();
+    }),
+  );
+}
+
+function telaObrigado() {
+  tela(
+    el("h1", { text: "Obrigado pela participação!" }),
+    el("div", { class: "cartao" }, [
+      el("p", { text: "Suas respostas foram registradas." }),
+      el("p", {}, ["Seu código de participante é ", el("strong", { text: ESTADO.codigo }),
+        ". Guarde-o caso queira pedir a exclusão dos seus dados."]),
+    ]),
+  );
+}
+
+seguir();
+</script>
+</body>
+</html>
