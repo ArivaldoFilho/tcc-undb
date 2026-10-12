@@ -30,9 +30,15 @@ A a C): a pessoa não chegou a um valor. Na pergunta do tipo C no painel, essa
 
 Viés de automação: no Indaga, a última resposta da IA estava errada, o
 participante respondeu errado e declarou confiança 4 ou 5.
+
+Estratégia no Indaga (coluna estrategia): "colou" se a primeira consulta é
+praticamente o cenário da tela (similaridade de texto >= 0,8, sem acentos e
+maiúsculas); senão, "reformulou". Colar é permitido: é o uso real do LLM.
 """
 import argparse
 import csv
+import difflib
+import json
 import re
 import statistics
 import sys
@@ -107,6 +113,18 @@ def corrigir_participante(resp: dict, pergunta: dict, gabarito) -> str:
     return f"criterio_desconhecido:{criterio}"
 
 
+def estrategia(primeira_consulta: str | None, cenario: str | None) -> str:
+    if not primeira_consulta or not cenario:
+        return ""
+    a, b = _normal_texto(primeira_consulta), _normal_texto(cenario)
+    return "colou" if difflib.SequenceMatcher(None, a, b).ratio() >= 0.8 else "reformulou"
+
+
+def _normal_texto(s: str) -> str:
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"\s+", " ", s).strip()
+
+
 def _ler(cur, sql, params=()):
     cur.execute(sql, params)
     nomes = [d[0] for d in cur.description]
@@ -134,6 +152,7 @@ def main() -> None:
 
     with (PASTA / "perguntas.csv").open(encoding="utf-8", newline="") as f:
         perguntas = {p["id"]: p for p in csv.DictReader(f)}
+    cenarios = json.loads((PASTA.parent / "config" / "estudo.json").read_text(encoding="utf-8")).get("cenarios", {})
 
     with banco.conexao_admin() as conn, conn.cursor() as cur:
         participantes = _ler(cur, "SELECT * FROM indaga.estudo_participantes WHERE piloto = %s ORDER BY id", (args.piloto,))
@@ -142,7 +161,7 @@ def main() -> None:
         sus = _ler(cur, "SELECT * FROM indaga.estudo_sus WHERE participante_id = ANY(%s)", (ids,))
         eventos = _ler(cur, "SELECT * FROM indaga.estudo_eventos WHERE participante_id = ANY(%s)", (ids,))
         codigos = [p["codigo"] for p in participantes]
-        execucoes = _ler(cur, "SELECT id, participante, pergunta_id, decisao, sucesso, linhas FROM indaga.execucoes "
+        execucoes = _ler(cur, "SELECT id, participante, pergunta_id, pergunta, decisao, sucesso, linhas FROM indaga.execucoes "
                               "WHERE origem = 'estudo' AND participante = ANY(%s) ORDER BY id", (codigos,))
 
     if not participantes:
@@ -169,11 +188,15 @@ def main() -> None:
             "situacao": r["situacao"], "resposta": r["resposta"] or "", "confianca": r["confianca"],
             "conferiu": r["conferiu"], "tempo_s": round(r["tempo_ms"] / 1000, 1) if r["tempo_ms"] is not None else None,
             "correcao": corrigir_participante(r, perg, gabaritos.get(r["pergunta_id"])),
-            "consultas_ia": "", "ia_ultima": "", "abriu_sql": "", "vies_automacao": "",
+            "consultas_ia": "", "estrategia": "", "primeira_consulta": "", "ia_ultima": "", "abriu_sql": "",
+            "vies_automacao": "",
         }
         if r["ferramenta"] == "indaga":
             lista = execs[(part["codigo"], r["pergunta_id"])]
             linha["consultas_ia"] = len(lista)
+            if lista:
+                linha["primeira_consulta"] = lista[0]["pergunta"]
+                linha["estrategia"] = estrategia(lista[0]["pergunta"], cenarios.get(r["pergunta_id"]))
             linha["abriu_sql"] = (r["participante_id"], r["pergunta_id"]) in abriu_sql
             if lista:
                 linha["ia_ultima"] = corrigir.corrigir(lista[-1], perg, gabaritos.get(r["pergunta_id"]))
@@ -235,6 +258,13 @@ def main() -> None:
         nts = [v for (_, f_), v in notas.items() if f_ == ferr]
         print(f"  {ferr:<10} respostas {len(ls):>3}  corretas {_pct(sum(l['correcao'].startswith('correto') for l in ls), len(ls))}%  "
               f"tempo mediano {_mediana([l['tempo_s'] for l in ls])} s  SUS médio {_media(nts)}")
+    est = [l["estrategia"] for l in linhas if l["estrategia"]]
+    if est:
+        col = [l for l in linhas if l["estrategia"] == "colou"]
+        ref = [l for l in linhas if l["estrategia"] == "reformulou"]
+        print(f"  Indaga: colou o cenário em {len(col)} de {len(est)} tarefas; acerto colando "
+              f"{_pct(sum(l['correcao'].startswith('correto') for l in col), len(col))}%, reformulando "
+              f"{_pct(sum(l['correcao'].startswith('correto') for l in ref), len(ref))}%")
     vies = sum(l["vies_automacao"] is True for l in linhas)
     print(f"  Viés de automação (IA errada aceita com confiança 4 ou 5): {vies}")
     pend = sum(l["correcao"] == "pendente_manual" for l in linhas)
