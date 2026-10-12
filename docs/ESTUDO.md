@@ -1,6 +1,6 @@
 # Estudo com usuários (Fase 6)
 
-O participante recebe um link, por exemplo `https://tcc-undb.vercel.app/estudo`,
+O participante recebe um link, `https://tcc-undb.vercel.app` (a raiz do site),
 e faz tudo pelo navegador, sem sessão marcada:
 
 1. Lê e aceita o termo de consentimento.
@@ -89,7 +89,7 @@ resposta do Indaga pode levar até 60 s. A versão do Python fica fixada no
    `DATABASE_URL`, `DATABASE_URL_LEITURA`, `INDAGA_MODELO` e `INDAGA_ESFORCO`,
    com os mesmos valores da Fase 5, e acrescente uma `INDAGA_SENHA_ACESSO`
    nova, que protege a interface livre em `/`.
-4. Faça um novo deploy. Abra `https://<seu-projeto>.vercel.app/estudo?piloto=1`.
+4. Faça um novo deploy. Abra `https://tcc-undb.vercel.app/?piloto=1`. A interface livre do Indaga fica em `/indaga`, com a senha `INDAGA_SENHA_ACESSO`.
 
 Cada push no `main` gera um deploy novo. **Depois que a coleta começar, não
 envie mudanças para o `main`**, porque isso trocaria o sistema no meio do
@@ -108,7 +108,7 @@ estudo.
 
 ## Coleta e análise
 
-- Link para os participantes: `https://<seu-projeto>.vercel.app/estudo`.
+- Link para os participantes: `https://tcc-undb.vercel.app`.
 - Para acompanhar a coleta e gerar os arquivos de análise:
   ```
   .venv\Scripts\python avaliacao\analisar_estudo.py

@@ -271,7 +271,7 @@ function telaPergunta(bloco, pergunta, posicao) {
   if (!guardado(chaveInicio)) guardar(chaveInicio, String(Date.now()));
   const src = bloco.ferramenta === "dashboard"
     ? ESTADO.dashboard_url
-    : `/?estudo=${encodeURIComponent(TOKEN)}&pergunta=${encodeURIComponent(pergunta.id)}`;
+    : `/indaga?estudo=${encodeURIComponent(TOKEN)}&pergunta=${encodeURIComponent(pergunta.id)}`;
   const frame = el("iframe", { class: "ferramenta", src, title: NOMES[bloco.ferramenta], allowfullscreen: true });
   // O tempo da tarefa começa quando a ferramenta termina de carregar, para que a
   // demora de carga do Power BI não pese contra o painel.

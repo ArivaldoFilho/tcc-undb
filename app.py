@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 from indaga import config, esquema, estudo, pipeline
@@ -33,14 +33,22 @@ async def _erro_estudo(_: Request, exc: estudo.ErroEstudo):
     return JSONResponse(status_code=exc.status, content={"detail": str(exc)})
 
 
+# A raiz é a página do estudo: é o link enviado aos participantes. A interface
+# livre do Indaga fica em /indaga, protegida por INDAGA_SENHA_ACESSO.
 @app.get("/")
-def pagina():
-    return FileResponse(ESTATICOS / "index.html")
+def pagina_estudo():
+    return FileResponse(ESTATICOS / "estudo.html")
 
 
 @app.get("/estudo")
-def pagina_estudo():
-    return FileResponse(ESTATICOS / "estudo.html")
+def estudo_antigo(request: Request):
+    destino = "/" + (f"?{request.url.query}" if request.url.query else "")
+    return RedirectResponse(destino, status_code=308)
+
+
+@app.get("/indaga")
+def pagina_indaga():
+    return FileResponse(ESTATICOS / "index.html")
 
 
 @app.get("/api/config")

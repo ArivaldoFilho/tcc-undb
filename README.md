@@ -68,7 +68,7 @@ O que o modelo recebe:
    ```
    O script confere o cabeçalho de cada CSV, carrega, tenta criar as chaves estrangeiras e imprime as linhas por tabela. Anote esses números para o capítulo 3.
 5. **Conferir as descrições.** Rode `SELECT DISTINCT order_status FROM olist.orders` e `SELECT DISTINCT payment_type FROM olist.order_payments` e confirme que os valores listados em `config/descricoes.json` batem com a base.
-6. **Subir a interface.** Execute `iniciar.bat` e abra http://localhost:8010.
+6. **Subir a interface.** Execute `iniciar.bat`. A interface do Indaga fica em http://localhost:8010/indaga e a página do estudo em http://localhost:8010/.
 
 `GET /api/esquema` devolve o texto exato que o modelo recebe, pronto para o apêndice.
 

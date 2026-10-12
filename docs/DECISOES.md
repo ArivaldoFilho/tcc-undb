@@ -141,6 +141,7 @@ As escolhas originais estão no `README.md`, na tabela "Escolhas para o experime
 - ✅ **D6.10 Limite de custo:** no máximo 8 consultas à IA por pergunta, aceitas só para a pergunta em andamento. Mais um limite de gasto no console da Anthropic. **Cap. 4.**
 - ✅ **D6.11 Dados mínimos:** sem nome, e-mail ou documento. O participante é identificado por um código (P001...), e o piloto usa outro (T001...), que fica fora da análise. O termo avisa que as perguntas digitadas são processadas por um serviço de terceiros (Anthropic). **Cap. 3**, com a discussão de LGPD e ética.
 - ✅ **D6.12 Hospedagem na Vercel** (12/10/2026; antes estava previsto o Render). O FastAPI roda como função serverless, com tempo máximo de 300 s (`vercel.json`) e Python 3.12. Cada push no `main` gera um deploy novo, então o `main` fica congelado durante a coleta. **Motivo:** preferência do autor e integração com o GitHub. **Cap. 4.**
+- ✅ **D6.15 Link único para os participantes:** a raiz do site (https://tcc-undb.vercel.app) abre o estudo. A interface livre do Indaga fica em `/indaga`, protegida por senha (12/10/2026). **Motivo:** o participante não deve cair na ferramenta antes do termo e do sorteio do grupo. **Cap. 4.**
 - ⏳ **D6.13 Itens do SUS:** por enquanto é uma tradução de trabalho. **Ver P10.**
 - ⏳ **D6.14 Termo de consentimento:** é um rascunho. **Ver P1 e P11.**
 
