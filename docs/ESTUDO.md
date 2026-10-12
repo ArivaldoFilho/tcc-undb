@@ -1,6 +1,6 @@
 # Estudo com usuários (Fase 6)
 
-O participante recebe um link, por exemplo `https://indaga.onrender.com/estudo`,
+O participante recebe um link, por exemplo `https://tcc-undb.vercel.app/estudo`,
 e faz tudo pelo navegador, sem sessão marcada:
 
 1. Lê e aceita o termo de consentimento.
@@ -73,20 +73,27 @@ o que acontece dentro dela.
 5. **Limite de gasto:** defina um limite mensal no console da Anthropic
    (Settings > Limits). O link é público.
 
-## Publicar no Render
+## Publicar na Vercel
+
+O FastAPI roda na Vercel sem adaptação: ela detecta o `app.py` na raiz. O
+`vercel.json` só aumenta o tempo máximo da função para 300 s, porque uma
+resposta do Indaga pode levar até 60 s. A versão do Python fica fixada no
+`.python-version`.
 
 1. O código está em https://github.com/ArivaldoFilho/tcc-undb (público). O
    `.env`, a pasta `dados/` e o `.docx` do TCC ficam fora do Git (`.gitignore`).
-2. No [Render](https://render.com), escolha *New > Blueprint* e selecione o
-   repositório. Ele lê o `render.yaml`.
-3. Preencha as variáveis pedidas com os valores do seu `.env`:
-   `ANTHROPIC_API_KEY`, `DATABASE_URL`, `DATABASE_URL_LEITURA` e uma
-   `INDAGA_SENHA_ACESSO` nova, que protege a interface livre em `/`.
-4. Quando o deploy terminar, abra `https://<seu-servico>.onrender.com/estudo?piloto=1`.
+2. Na Vercel, importe o repositório (*Add New > Project*). O projeto
+   `tcc-undb` já existe na conta.
+3. Em *Settings > Environment Variables*, cole o conteúdo do `.env` (a Vercel
+   aceita colar o arquivo inteiro). Confira se aparecem `ANTHROPIC_API_KEY`,
+   `DATABASE_URL`, `DATABASE_URL_LEITURA`, `INDAGA_MODELO` e `INDAGA_ESFORCO`,
+   com os mesmos valores da Fase 5, e acrescente uma `INDAGA_SENHA_ACESSO`
+   nova, que protege a interface livre em `/`.
+4. Faça um novo deploy. Abra `https://<seu-projeto>.vercel.app/estudo?piloto=1`.
 
-No plano gratuito, o serviço dorme depois de 15 minutos sem acesso, e o
-primeiro acesso seguinte leva cerca de 1 minuto. Durante a coleta, mude para o
-plano *Starter* ou avise os participantes.
+Cada push no `main` gera um deploy novo. **Depois que a coleta começar, não
+envie mudanças para o `main`**, porque isso trocaria o sistema no meio do
+estudo.
 
 ## Piloto
 
@@ -101,7 +108,7 @@ plano *Starter* ou avise os participantes.
 
 ## Coleta e análise
 
-- Link para os participantes: `https://<seu-servico>.onrender.com/estudo`.
+- Link para os participantes: `https://<seu-projeto>.vercel.app/estudo`.
 - Para acompanhar a coleta e gerar os arquivos de análise:
   ```
   .venv\Scripts\python avaliacao\analisar_estudo.py

@@ -20,7 +20,7 @@ O dashboard da Solução A (Power BI) consulta o **mesmo banco** e usa as
 | `dashboard/` | Dashboard Power BI (Solução A) em formato PBIP, com o SQL do modelo; ver `dashboard/README.md` |
 | `avaliacao/` | Banco de perguntas, avaliação técnica (Fase 5) e análise do estudo (Fase 6) |
 | `docs/` | Plano das fases, registro de decisões (`DECISOES.md`) e guia do estudo (`ESTUDO.md`) |
-| `render.yaml` | Hospedagem no Render |
+| `vercel.json`, `.python-version` | Hospedagem na Vercel (estudo com usuários) |
 
 ## Fluxo de uma pergunta
 
