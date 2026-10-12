@@ -16,7 +16,10 @@ Critérios (coluna "criterio" de perguntas.csv, definidos ANTES da coleta):
              valores da primeira coluna do gabarito (a ordem não conta)
     tabela   mesmo multiconjunto de linhas (valores arredondados a 2 casas;
              a ordem das linhas e das colunas não conta)
-    recusa   correto se a decisão foi sem_dados ou esclarecimento
+    recusa   correto se a decisão foi sem_dados ou esclarecimento. Se a IA
+             executou SQL e escreveu a explicação, fica "pendente_manual": a
+             explicação pode avisar que falta o dado (ex.: "a base termina em
+             2018"), o que também é correto, e só uma pessoa julga isso.
     rubrica  fica "pendente_manual" para correção humana
 
 Também confere os números citados na narrativa: um número que não aparece no
@@ -71,7 +74,9 @@ def corrigir(execucao: dict, pergunta: dict, gabarito: tuple[list, list] | None)
     criterio = pergunta["criterio"]
     decisao = execucao.get("decisao")
     if criterio == "recusa":
-        return "correto" if decisao in ("sem_dados", "esclarecimento") else "incorreto"
+        if decisao in ("sem_dados", "esclarecimento"):
+            return "correto"
+        return "pendente_manual" if execucao.get("sucesso") and execucao.get("narrativa") else "incorreto"
     if not execucao.get("sucesso"):
         return "falha"
     if criterio == "rubrica":

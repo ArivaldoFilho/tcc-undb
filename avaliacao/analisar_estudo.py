@@ -161,7 +161,7 @@ def main() -> None:
         sus = _ler(cur, "SELECT * FROM indaga.estudo_sus WHERE participante_id = ANY(%s)", (ids,))
         eventos = _ler(cur, "SELECT * FROM indaga.estudo_eventos WHERE participante_id = ANY(%s)", (ids,))
         codigos = [p["codigo"] for p in participantes]
-        execucoes = _ler(cur, "SELECT id, participante, pergunta_id, pergunta, decisao, sucesso, linhas FROM indaga.execucoes "
+        execucoes = _ler(cur, "SELECT id, participante, pergunta_id, pergunta, decisao, sucesso, linhas, narrativa FROM indaga.execucoes "
                               "WHERE origem = 'estudo' AND participante = ANY(%s) ORDER BY id", (codigos,))
 
     if not participantes:

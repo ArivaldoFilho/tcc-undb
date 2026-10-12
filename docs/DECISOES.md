@@ -115,6 +115,7 @@ As escolhas originais estão no `README.md`, na tabela "Escolhas para o experime
   **Cap. 5** (discussão dos erros).
 - ⚠️ **D4.6 O mesmo agente (o autor, com apoio de IA) construiu as duas soluções e escreveu as perguntas.** A revisão pelo orientador e por uma pessoa de fora (P8) atenua isso. **Cap. 5** (validade interna).
 - ✅ **D4.7 Versão do dashboard usada na classificação:** hash `650a8b665c17` dos arquivos de `dashboard/`. **Cap. 3.**
+- ✅ **D4.8 Critério "recusa" com revisão manual** (12/10/2026, auditoria antes da coleta). Se a IA recusa (sem_dados ou esclarecimento), a resposta conta como correta. Se a IA executa o SQL e escreve a explicação, a resposta vai para `pendente_manual`, e não para incorreto. **Motivo:** no teste, a D2 ("Quanto vendemos ontem?") devolveu R$ 0,00, mas a explicação dizia que a base termina em 2018 e que a pergunta não pode ser respondida. Essa é a resposta desejada, e a regra anterior a marcava como erro. **Cap. 3.**
 
 ## Fase 6: Estudo com usuários
 
