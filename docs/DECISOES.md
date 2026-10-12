@@ -25,6 +25,10 @@ Atualizado a cada decisão nova; as mais recentes ficam no fim de cada seção.
 | P11 | Preencher e revisar o termo de consentimento (`config/estudo.json`, `static/estudo.html`) | Autor e orientador | 12/10/2026 |
 | P12 | Como o Power BI foi conectado ao Supabase: certificado raiz instalado ou criptografia desligada? Registrar a escolha | Autor | 12/10/2026 |
 | P13 | Cenários já escritos (D6.20). Falta escolher as perguntas do estudo depois da Fase 5, priorizando as que a IA às vezes erra | Autor | 12/10/2026 |
+| P14 | Acrescentar perguntas-armadilha ao banco antes de congelar (junção itens x pagamentos, período relativo, ticket com ou sem frete, várias etapas), para evitar o efeito teto da IA (ver D9.3) | Autor | 12/10/2026 |
+| P15 | Medir o esforço técnico como esforço de adaptação: para cada pergunta C, o que o painel precisaria mudar (medida, visual, modelo) e o que o Indaga precisaria mudar | Autor e orientador | 12/10/2026 |
+| P16 | Limite de gasto no console da Anthropic antes de divulgar o link (qualquer sessão nova pode gerar até 32 consultas, cerca de US$ 1) | Autor | 12/10/2026 |
+| P17 | Preencher a tabela de conferência das medidas em `dashboard/README.md` com os valores do painel publicado | Autor | 12/10/2026 |
 
 ---
 
@@ -170,3 +174,5 @@ As escolhas originais estão no `README.md`, na tabela "Escolhas para o experime
   Precisa ser declarado conforme a política da UNDB. **Ver P4.** **Cap. 3** (ou uma seção de declaração).
 
 - ✅ **D9.2 Repositório público** em https://github.com/ArivaldoFilho/tcc-undb (12/10/2026). Ficam fora do Git: `.env` (segredos), `dados/` (CSVs do Kaggle), o `.docx` do TCC (texto não publicado) e o `.pbix` (gerado a partir do PBIP). **Motivo:** reprodutibilidade, com o código, os SQLs, os gabaritos e os critérios abertos para a banca. **Cap. 3** (disponibilidade do material).
+
+- ⚠️ **D9.3 Auditoria de 12/10/2026: risco de efeito teto.** No teste da Fase 5 (5 perguntas, 1 repetição), a IA acertou todas as perguntas corrigíveis automaticamente, inclusive a armadilha de customer_unique_id (B5), e respondeu bem à C1 e à D2. Se a IA acertar quase tudo, a matriz de decisão fica pobre e o viés de automação não aparece. **Mitigação (P14):** perguntas mais difíceis, ainda realistas, antes do congelamento. **Cap. 5.**
