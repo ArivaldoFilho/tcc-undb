@@ -65,17 +65,17 @@ Depois de atualizar o Power BI, cada cartão precisa mostrar o mesmo valor.
 
 | Medida | Valor de referência (SQL) | Power BI | OK |
 |---|---:|---:|:-:|
-| Faturamento | R$ 13.494.400,74 | | |
+| Faturamento | R$ 13.494.400,74 | R$ 13,49 Mi | ✅ |
 | Faturamento, Ano = 2017 | R$ 6.108.492,27 | | |
-| Pedidos | 98.207 | | |
-| Ticket médio | R$ 137,41 | | |
+| Pedidos | 98.207 | 98 Mil | ✅ |
+| Ticket médio | R$ 137,41 | R$ 137,41 | ✅ |
 | Frete | R$ 2.241.126,29 | | |
-| Clientes únicos | 94.990 | | |
+| Clientes únicos | 94.990 | 95 Mil | ✅ |
 | Pedidos entregues | 96.476 | | |
 | Pedidos atrasados | 7.827 | | |
-| % pedidos atrasados | 8,1% | | |
+| % pedidos atrasados | 8,1% | 8,1% | ✅ |
 | Prazo médio de entrega (dias) | 12,5 | | |
-| Nota média | 4,09 | | |
+| Nota média | 4,09 | 4,09 | ✅ |
 | Avaliações | 99.224 | | |
 
 ## Registro de esforço (Fase 2)

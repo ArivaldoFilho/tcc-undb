@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
   "name": "vendas_v11",
   "position": {
-    "x": 20,
+    "x": 160,
     "y": 195,
     "z": 11000,
     "height": 470,

@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
   "name": "visao_geral_v09",
   "position": {
-    "x": 853.33333333333337,
+    "x": 993.3333333333334,
     "y": 80,
     "z": 9000,
     "width": 198.33333333333334,

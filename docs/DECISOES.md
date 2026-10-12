@@ -26,7 +26,7 @@ Atualizado a cada decisão nova; as mais recentes ficam no fim de cada seção.
 | P13 | Cenários já escritos (D6.20). Falta escolher as perguntas do estudo depois da Fase 5, priorizando as que a IA às vezes erra | Autor | 12/10/2026 |
 | P15 | Medir o esforço técnico como esforço de adaptação: para cada pergunta C, o que o painel precisaria mudar (medida, visual, modelo) e o que o Indaga precisaria mudar | Autor e orientador | 12/10/2026 |
 | P16 | Limite de gasto no console da Anthropic antes de divulgar o link (qualquer sessão nova pode gerar até 32 consultas, cerca de US$ 1) | Autor | 12/10/2026 |
-| P17 | Preencher a tabela de conferência das medidas em `dashboard/README.md` com os valores do painel publicado | Autor | 12/10/2026 |
+| P17 | Conferência das medidas: os 6 cartões da Visão geral já conferem com o SQL (print de 12/10/2026); faltam Frete, Entregues, Atrasados, Prazo médio, Avaliações e Faturamento 2017 | Autor | 12/10/2026 |
 
 ---
 
@@ -76,6 +76,7 @@ Atualizado a cada decisão nova; as mais recentes ficam no fim de cada seção.
 - ⚠️ **D2.6 Viés na construção:** o dashboard foi montado depois de existirem 6 perguntas de exemplo, e o segmentador de Semestre coincide com a pergunta B1. **Ver P5.** **Cap. 5** (validade interna).
 - ✅ **D2.7 Modo de importação**, com 3 páginas: Visão geral, Vendas e Entrega e satisfação. A conferência das 12 medidas contra o SQL está em `dashboard/README.md`. **Cap. 4.**
 - ✅ **D2.8 Publicação pelo "Publicar na Web" do Power BI.** O link é público, o que não é problema porque a base é pública. **Motivo:** o estudo com usuários é online (D6.1). **Cap. 4.**
+- ✅ **D2.9 Navegação lateral** (12/10/2026, antes do congelamento): um Navegador de página vertical na coluna esquerda de cada página (as páginas passaram de 1280 para 1420 px de largura). **Motivo:** no "Publicar na Web", as abas de página ficam pouco visíveis no rodapé, e o participante do estudo pode não perceber as outras páginas. Isso prejudicaria o painel por um motivo de interface, e não de abordagem. **Cap. 4.**
 
 ## Fase 3: Indaga (Solução B)
 
