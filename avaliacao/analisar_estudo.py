@@ -16,12 +16,17 @@ Correção da resposta do participante (definida antes da coleta):
     numero/percentual  o primeiro número escrito na resposta, dentro da maior
                        entre a tolerância do gabarito e 0,5% do valor. Os 0,5%
                        aceitam a leitura abreviada dos cartões ("6,11 Mi").
+                       Se a resposta não tiver unidade ("6.11"), também testa
+                       mil e milhão, e a correção fica "correto_escala_inferida".
                        Em percentual, aceita pontos (6,6) ou fração (0,066).
     lista              o mesmo conjunto de itens, sem acento, maiúsculas,
                        espaços ou sublinhados; a ordem não conta
-    recusa             correto se marcou "os dados não permitem responder"
+    recusa             correto se marcou "a informação não existe nos dados"
     rubrica            pendente_manual
-"não consegui encontrar" vira nao_respondeu e não conta como erro nem acerto.
+"Não consegui" vira nao_respondeu, e não conta como erro nem como acerto. O
+mesmo vale para "a informação não existe" numa pergunta que tem dado (tipos
+A a C): a pessoa não chegou a um valor. Na pergunta do tipo C no painel, essa
+é a resposta esperada, porque o painel não tem o cruzamento.
 
 Viés de automação: no Indaga, a última resposta da IA estava errada, o
 participante respondeu errado e declarou confiança 4 ou 5.
@@ -42,18 +47,19 @@ sys.path.insert(0, str(PASTA))
 from indaga import banco  # noqa: E402
 import corrigir  # noqa: E402
 
-_NUM = re.compile(r"(\d[\d.,]*)\s*(milh\w*|mi\b|mil\b|bilh\w*|bi\b|k\b)?", re.IGNORECASE)
+_NUM = re.compile(r"(\d[\d.,]*)\s*(milh\w*|mil\b|mi\b|m\b|bilh\w*|bi\b|b\b|k\b)?", re.IGNORECASE)
 # Ordem importa: "mil" antes de "mi", senão "53,53 mil" vira milhões.
-_ESCALA = [("milh", 1e6), ("mil", 1e3), ("mi", 1e6), ("k", 1e3), ("bilh", 1e9), ("bi", 1e9)]
+_ESCALA = [("milh", 1e6), ("mil", 1e3), ("mi", 1e6), ("m", 1e6), ("k", 1e3), ("bilh", 1e9), ("bi", 1e9), ("b", 1e9)]
 
 
-def numero_do_texto(texto: str | None) -> float | None:
-    """Primeiro número de uma resposta escrita em português ("R$ 6,11 Mi", "53.532", "4.09")."""
+def numero_do_texto(texto: str | None, com_unidade: bool = False):
+    """Primeiro número de uma resposta escrita em português ("R$ 6,11 Mi", "53.532", "4.09").
+    Com com_unidade=True, devolve (valor, se a resposta tinha unidade de escala)."""
     if not texto:
-        return None
+        return (None, False) if com_unidade else None
     m = _NUM.search(texto)
     if not m:
-        return None
+        return (None, False) if com_unidade else None
     bruto, sufixo = m.group(1).rstrip(".,"), (m.group(2) or "").lower()
     if "," in bruto:
         bruto = bruto.replace(".", "").replace(",", ".")
@@ -62,9 +68,9 @@ def numero_do_texto(texto: str | None) -> float | None:
     try:
         valor = float(bruto)
     except ValueError:
-        return None
+        return (None, False) if com_unidade else None
     escala = next((f for k, f in _ESCALA if sufixo.startswith(k)), 1)
-    return valor * escala
+    return (valor * escala, bool(sufixo)) if com_unidade else valor * escala
 
 
 def _normal(s: str) -> str:
@@ -81,15 +87,20 @@ def corrigir_participante(resp: dict, pergunta: dict, gabarito) -> str:
     if criterio == "rubrica":
         return "pendente_manual"
     if situacao == "sem_dados":
-        return "incorreto"  # a base tem o dado
+        return "nao_respondeu"  # a base tem o dado, mas a pessoa não chegou a um valor
     _, gab = gabarito
     if criterio in ("numero", "percentual"):
-        alvo, valor = corrigir._num(gab[0][0]), numero_do_texto(resp["resposta"])
+        alvo = corrigir._num(gab[0][0])
+        valor, tem_unidade = numero_do_texto(resp["resposta"], com_unidade=True)
         if alvo is None or valor is None:
             return "incorreto"
         tol = max(float(pergunta["tolerancia"] or 0.01), 0.005 * abs(alvo))
         escalas = (1, 100) if criterio == "percentual" else (1,)
-        return "correto" if any(abs(valor * e - alvo) <= tol for e in escalas) else "incorreto"
+        if any(abs(valor * e - alvo) <= tol for e in escalas):
+            return "correto"
+        if not tem_unidade and criterio == "numero" and any(abs(valor * e - alvo) <= tol for e in (1e3, 1e6)):
+            return "correto_escala_inferida"
+        return "incorreto"
     if criterio == "lista":
         itens = {_normal(x) for x in re.split(r"[,;\n]|\be\b", resp["resposta"] or "") if x.strip()}
         return "correto" if itens == {_normal(l[0]) for l in gab} else "incorreto"
@@ -187,7 +198,7 @@ def main() -> None:
             n = len(ls)
             cont = lambda c: sum(l["correcao"] == c for l in ls)
             respondidas = [l for l in ls if l["situacao"] == "respondida"]
-            w.writerow([ferr, tipo, n, _pct(cont("correto"), n), _pct(cont("incorreto"), n), _pct(cont("nao_respondeu"), n),
+            w.writerow([ferr, tipo, n, _pct(sum(l["correcao"].startswith("correto") for l in ls), n), _pct(cont("incorreto"), n), _pct(cont("nao_respondeu"), n),
                         cont("pendente_manual"), _mediana([l["tempo_s"] for l in ls]), _media([l["confianca"] for l in ls]),
                         _pct(sum(bool(l["conferiu"]) for l in respondidas), len(respondidas)),
                         sum(l["vies_automacao"] is True for l in ls)])
@@ -201,8 +212,8 @@ def main() -> None:
             ls = [l for l in linhas if l["participante"] == p["codigo"]]
             de = lambda ferr: [l for l in ls if l["ferramenta"] == ferr]
             w.writerow([p["codigo"],
-                        sum(l["correcao"] == "correto" for l in de("dashboard")),
-                        sum(l["correcao"] == "correto" for l in de("indaga")),
+                        sum(l["correcao"].startswith("correto") for l in de("dashboard")),
+                        sum(l["correcao"].startswith("correto") for l in de("indaga")),
                         _mediana([l["tempo_s"] for l in de("dashboard")]), _mediana([l["tempo_s"] for l in de("indaga")]),
                         notas.get((p["id"], "dashboard"), ""), notas.get((p["id"], "indaga"), "")])
 
@@ -222,7 +233,7 @@ def main() -> None:
     for ferr in ("dashboard", "indaga"):
         ls = [l for l in linhas if l["ferramenta"] == ferr]
         nts = [v for (_, f_), v in notas.items() if f_ == ferr]
-        print(f"  {ferr:<10} respostas {len(ls):>3}  corretas {_pct(sum(l['correcao'] == 'correto' for l in ls), len(ls))}%  "
+        print(f"  {ferr:<10} respostas {len(ls):>3}  corretas {_pct(sum(l['correcao'].startswith('correto') for l in ls), len(ls))}%  "
               f"tempo mediano {_mediana([l['tempo_s'] for l in ls])} s  SUS médio {_media(nts)}")
     vies = sum(l["vies_automacao"] is True for l in linhas)
     print(f"  Viés de automação (IA errada aceita com confiança 4 ou 5): {vies}")

@@ -259,7 +259,7 @@ function telaIntroBloco(bloco) {
     el("h1", {}, [NOMES[bloco.ferramenta], seloPiloto()]),
     el("div", { class: "cartao" }, [
       ...textos.map((t) => el("p", { text: t })),
-      el("p", { class: "aviso", text: "Responda apenas com o que encontrar nesta ferramenta. Não use outras fontes, como planilhas, buscadores ou outros chats de IA. Se a ferramenta não permitir responder, diga isso: essa também é uma resposta válida." }),
+      el("p", { class: "aviso", text: "Responda apenas com o que encontrar nesta ferramenta. Não use outras fontes, como planilhas, buscadores ou outros chats de IA. Se a informação não existir nos dados, ou se você não conseguir chegar à resposta nesta ferramenta, marque a opção correspondente: essas também são respostas válidas." }),
     ]),
     el("p", { text: `São ${bloco.perguntas.length} perguntas. O tempo de cada uma é medido, mas responda no seu ritmo normal.` }),
     ...botaoEnviar("Ir para a primeira pergunta", async () => { guardar(chave("intro", bloco.bloco), "1"); await seguir(); }),
@@ -277,10 +277,10 @@ function telaPergunta(bloco, pergunta, posicao) {
   // demora de carga do Power BI não pese contra o painel.
   frame.addEventListener("load", () => { if (!guardado(chaveCarga)) guardar(chaveCarga, String(Date.now())); }, { once: true });
 
-  const resposta = el("input", { type: "text", id: "resposta", autocomplete: "off", placeholder: "Ex.: R$ 1,2 mi · 53.532 · 6,6%" });
+  const resposta = el("input", { type: "text", id: "resposta", autocomplete: "off", placeholder: "Ex.: R$ 6,11 Mi · 53,5 mil · 6,6%" });
   const caixaResposta = el("div", { hidden: true }, [
     el("label", { for: "resposta", text: "Resposta encontrada", style: "font-weight:600;display:block;margin-bottom:6px" }), resposta,
-    el("p", { class: "ajuda", text: "Escreva o valor como aparece na ferramenta." }),
+    el("p", { class: "ajuda", text: "Escreva o valor como aparece na ferramenta, com a unidade (Mi, mil, %)." }),
   ]);
   const blocoConfianca = el("fieldset", { hidden: true }, [
     el("legend", { text: "Quanto você confia nessa resposta?" }), escala("confianca", "nenhuma", "total")]);
@@ -289,8 +289,8 @@ function telaPergunta(bloco, pergunta, posicao) {
     radios("conferiu", [["sim", "Sim"], ["nao", "Não"]])]);
   const situacao = radios("situacao", [
     ["respondida", "Encontrei a resposta"],
-    ["sem_dados", "Os dados disponíveis não permitem responder"],
-    ["nao_consegui", "Não consegui encontrar a resposta"],
+    ["sem_dados", "A informação necessária não existe nos dados"],
+    ["nao_consegui", "Não consegui chegar à resposta nesta ferramenta"],
   ]);
   situacao.addEventListener("change", () => {
     const s = valor("situacao");

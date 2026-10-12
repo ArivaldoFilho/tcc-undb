@@ -2,8 +2,8 @@
   "_leia_me": "Configuração do estudo com usuários (Fase 6). Os textos e gabaritos das perguntas vêm de avaliacao/perguntas.csv, pelo id. Cada conjunto tem uma pergunta de cada tipo (A, B, C, D), em pares equivalentes: A1/A2, B1/B4, C4/C3, D1/D3. Não altere depois que o primeiro participante real começar.",
   "termo": {
     "titulo_pesquisa": "[TÍTULO DO TCC]",
-    "pesquisador": "[NOME DO PESQUISADOR]",
-    "orientador": "[NOME DO ORIENTADOR]",
+    "pesquisador": "Arivaldo Braga",
+    "orientador": "Rodrigo Justino",
     "contato": "[E-MAIL DE CONTATO]",
     "guarda_dados": "até a conclusão e a apresentação do TCC"
   },

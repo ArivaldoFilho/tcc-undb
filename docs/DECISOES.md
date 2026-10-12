@@ -142,6 +142,14 @@ As escolhas originais estão no `README.md`, na tabela "Escolhas para o experime
 - ✅ **D6.11 Dados mínimos:** sem nome, e-mail ou documento. O participante é identificado por um código (P001...), e o piloto usa outro (T001...), que fica fora da análise. O termo avisa que as perguntas digitadas são processadas por um serviço de terceiros (Anthropic). **Cap. 3**, com a discussão de LGPD e ética.
 - ✅ **D6.12 Hospedagem na Vercel** (12/10/2026; antes estava previsto o Render). O FastAPI roda como função serverless, com tempo máximo de 300 s (`vercel.json`) e Python 3.12. Cada push no `main` gera um deploy novo, então o `main` fica congelado durante a coleta. **Motivo:** preferência do autor e integração com o GitHub. **Cap. 4.**
 - ✅ **D6.15 Link único para os participantes:** a raiz do site (https://tcc-undb.vercel.app) abre o estudo. A interface livre do Indaga fica em `/indaga`, protegida por senha (12/10/2026). **Motivo:** o participante não deve cair na ferramenta antes do termo e do sorteio do grupo. **Cap. 4.**
+- ✅ **D6.16 Correção das respostas digitadas, revista depois do teste do autor** (12/10/2026, antes de qualquer participante real):
+  - "M" passa a valer como milhão;
+  - uma resposta sem unidade ("6.11") também é testada como mil e como milhão, e a correção fica `correto_escala_inferida`, contada como acerto mas identificável na análise;
+  - "a informação não existe" numa pergunta que tem dado (tipos A a C) conta como `nao_respondeu`, e não como erro, porque a pessoa não chegou a um valor. No tipo C, no painel, essa é a resposta esperada.
+
+  **Motivo:** o teste mostrou acertos marcados como erro (`6.11` em vez de "6,11 Mi") e a falta de uma distinção entre "o painel não responde" e "a pessoa errou". **Cap. 3.**
+- ✅ **D6.17 Opções de resposta reescritas:** "A informação necessária não existe nos dados" e "Não consegui chegar à resposta nesta ferramenta". A tela também pede a unidade (Mi, mil, %). **Motivo:** separar a pergunta sem dado (tipo D) da falha da ferramenta ou da pessoa. **Cap. 3.**
+- ✅ **D6.18 O teste do autor foi registrado como piloto** (T001). Ele entrou sem `?piloto=1` e foi reclassificado, para não desequilibrar o sorteio dos grupos. **Achado do piloto:** na B1, o painel levou a um erro real (R$ 2,19 Mi, que é SP no ano inteiro, contra R$ 1,46 Mi no 2º semestre). O filtro de semestre só existe na página Vendas. **Cap. 5** (exemplo qualitativo).
 - ⏳ **D6.13 Itens do SUS:** por enquanto é uma tradução de trabalho. **Ver P10.**
 - ⏳ **D6.14 Termo de consentimento:** é um rascunho. **Ver P1 e P11.**
 
