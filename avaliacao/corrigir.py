@@ -9,8 +9,11 @@ Gera, em avaliacao/resultados/:
     <rodada>_revisao.csv     o que precisa de olhar humano (ver abaixo); é preenchido à mão
     <rodada>_resumo.csv      uma linha por pergunta: acerto, consistência, tempo, custo
 
-A unidade avaliada é a resposta final que o usuário lê (resultado e explicação),
-não só o SQL.
+Unidade de correção: a execução (uma pergunta numa repetição). O veredito é
+sobre a resposta que o usuário recebe, resultado e explicação, e não sobre o
+SQL. A correção automática compara só o resultado com o gabarito; a explicação
+é conferida na revisão manual (recusas, rubricas, números da explicação fora do
+resultado e a amostra de acertos automáticos).
 
 Critérios automáticos (coluna "criterio", definidos ANTES da coleta):
     numero      uma linha no resultado e alguma célula igual ao gabarito, dentro
@@ -28,8 +31,12 @@ Falha da API depois da nova tentativa do rodar.py: "erro_execucao", fora da
 taxa de acerto.
 
 Revisão manual (<rodada>_revisao.csv). Entram: pendentes (recusa e rubrica),
-incorretos e falhas (reconferir o gabarito antes de contar o erro) e
-explicações com números que não aparecem no resultado. Colunas a preencher:
+incorretos e falhas (reconferir o gabarito antes de contar o erro),
+explicações com números que não aparecem no resultado e uma amostra dos acertos
+automáticos: --amostra execuções por pergunta (padrão 1), sorteadas entre as
+corretas pelo critério automático, com semente fixa no nome da rodada. A
+amostra estima os falsos positivos do critério (resultado certo pela razão
+errada, ou explicação errada). Colunas a preencher:
     avaliador_1, avaliador_2   correto | incorreto, cada um sem ver o outro
     veredito_final             correto | incorreto | erro_execucao (consenso)
     explicacao_errada          sim, se o resultado está certo e o texto errado
@@ -40,6 +47,7 @@ import argparse
 import csv
 import hashlib
 import json
+import random
 import re
 import statistics
 import sys
@@ -166,6 +174,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--rodada", required=True)
     parser.add_argument("--arquivo", type=Path, default=PASTA / "perguntas.csv")
+    parser.add_argument("--amostra", type=int, default=1, help="acertos automáticos revisados por pergunta")
     args = parser.parse_args()
 
     res = PASTA / "resultados"
@@ -182,6 +191,16 @@ def main() -> None:
         if sql and perguntas[pid]["criterio"] in ("numero", "percentual", "lista", "tabela"):
             gabaritos[pid] = banco.executar_leitura(sql)[:2]
 
+    automaticas = {f"{e['pergunta_id']}#{e['repeticao']}": corrigir(e, perguntas[e["pergunta_id"]],
+                                                                    gabaritos.get(e["pergunta_id"]))
+                   for e in execucoes}
+    # Amostra dos acertos automáticos: sorteio por pergunta, reproduzível pela semente.
+    sorteio, amostra = random.Random(f"amostra:{args.rodada}"), set()
+    for pid in sorted({e["pergunta_id"] for e in execucoes}, key=_ordem):
+        corretas = sorted((c for c, a in automaticas.items() if a == "correto" and c.split("#")[0] == pid),
+                          key=lambda c: int(c.split("#")[1]))
+        amostra.update(sorteio.sample(corretas, min(args.amostra, len(corretas))))
+
     caminho_revisao = res / f"{args.rodada}_revisao.csv"
     revisao_anterior = _ler_revisao(caminho_revisao)
     revisao, por_pergunta = [], defaultdict(list)
@@ -193,7 +212,7 @@ def main() -> None:
         for e in execucoes:
             p = perguntas[e["pergunta_id"]]
             chave = f"{e['pergunta_id']}#{e['repeticao']}"
-            automatica = corrigir(e, p, gabaritos.get(e["pergunta_id"]))
+            automatica = automaticas[chave]
             suspeitos = numeros_sem_correspondencia(e.get("narrativa"), e.get("linhas") or [])
             anterior = revisao_anterior.get(chave, {})
             situacao = (anterior.get("veredito_final") or "").strip() or automatica
@@ -204,6 +223,8 @@ def main() -> None:
                 motivos.append("erro: reconferir o gabarito")
             if suspeitos:
                 motivos.append("números da explicação fora do resultado")
+            if chave in amostra:
+                motivos.append("amostra de acertos automáticos")
             if motivos:
                 revisao.append({
                     "chave": chave, "id_registro": e.get("id"), "pergunta_id": e["pergunta_id"], "tipo": p["tipo"],
@@ -258,6 +279,10 @@ def main() -> None:
     pend = sum(x["situacao"] == "pendente_manual" for v in por_pergunta.values() for x in v)
     print(f"Resultados em {res} ({args.rodada}_execucoes, _revisao, _resumo).")
     print(f"{len(revisao)} execuções para revisão; {pend} ainda sem veredito final.")
+    julgadas = [r for r in revisao if r["chave"] in amostra and (r["veredito_final"] or "").strip()]
+    revertidas = sum(r["veredito_final"].strip() != "correto" for r in julgadas)
+    print(f"Amostra de acertos automáticos: {len(amostra)} execuções, {len(julgadas)} julgadas, "
+          f"{revertidas} revertidas.")
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ Nada roda antes disso.
 |---|---|
 | Cartões do painel conferidos e painel congelado (registrar a data) | Visão geral conferida; faltam Vendas e Entrega (`dashboard/README.md`) |
 | Gabaritos das 20 perguntas conferidos pelo orientador | Pendente |
+| Coluna `coberta_pela_documentacao` preenchida nas 20 perguntas | Feito pelo autor (B7, B8, D2 e D5 = nao); conferir junto com os gabaritos |
 | Rubricas das perguntas do tipo D escritas | Feito: coluna `observacao` de D1, D2, D3 e D5 em `avaliacao/perguntas.csv` |
 | Configuração do Indaga congelada; `config_hash` anotado | Pendente; hash atual `0bf3b7d7bed6b8ac` |
 | Usuário do banco somente leitura para o Indaga | Feito: `indaga_leitor` |
@@ -48,8 +49,15 @@ python avaliacao/rodar.py --rodada final --repeticoes 5
 **A2. Falhas de API.** O `rodar.py` faz uma nova tentativa. Se falhar de novo,
 a execução vira **erro de execução**, que fica fora da taxa de acerto.
 
-**A3. Correção automática** pelo critério de cada pergunta. A unidade avaliada
-é a **resposta final** que o usuário lê (resultado e explicação), não só o SQL.
+**A3. Correção automática** pelo critério de cada pergunta.
+
+A **unidade de correção é a execução**: uma pergunta numa repetição, e cada
+uma recebe um veredito. O veredito é sobre a **resposta que o usuário recebe**
+(resultado e explicação), e não sobre o SQL: um SQL diferente do gabarito que
+chega ao mesmo resultado está certo. A correção automática, porém, compara só
+o resultado com o gabarito. A explicação é conferida na revisão manual (A4 e
+A5), pelas recusas e rubricas, pelos números citados que não aparecem no
+resultado e pela amostra de acertos automáticos.
 ```
 python avaliacao/corrigir.py --rodada final
 ```
@@ -58,7 +66,13 @@ python avaliacao/corrigir.py --rodada final
 - as recusas e rubricas, que pedem julgamento;
 - os erros, para reconferir o gabarito antes de contar o erro;
 - as explicações com números que não aparecem no resultado (alucinação na
-  etapa de texto).
+  etapa de texto);
+- uma **amostra dos acertos automáticos**: uma execução sorteada por pergunta
+  entre as corretas pelo critério (`--amostra` muda a quantidade). O sorteio
+  usa uma semente fixa, o nome da rodada, e não muda ao rodar de novo. A
+  amostra estima quantos acertos automáticos são falsos (resultado certo pela
+  razão errada, ou explicação errada); o `corrigir.py` imprime quantas foram
+  revertidas.
 
 O autor e um segundo avaliador preenchem `avaliador_1` e `avaliador_2`, cada
 um sem ver o outro. O consenso vai em `veredito_final`, e `explicacao_errada`
@@ -146,6 +160,8 @@ banco e mais `participante`, `tipo_autor`, `tipo_segundo` e `triagem`.
 **C3. Classificar** cada pergunta nos tipos A a D, em relação ao painel
 congelado. O autor preenche `tipo_autor` e um segundo classificador preenche
 `tipo_segundo`. As divergências são resolvidas por consenso na coluna `tipo`.
+O autor também preenche `coberta_pela_documentacao`, com o mesmo critério das
+perguntas do banco (D1).
 ```
 python avaliacao/concordancia.py avaliacao/perguntas_participantes.csv --colunas tipo_autor tipo_segundo
 ```
@@ -173,6 +189,15 @@ python avaliacao/corrigir.py --rodada participantes --arquivo avaliacao/pergunta
 da IA, o tempo, o custo, a cobertura do painel e o esforço de adaptação. Uma
 matriz para as perguntas do banco e outra para as dos participantes, e as duas
 lado a lado.
+
+A matriz também separa os resultados pela coluna `coberta_pela_documentacao`:
+- **sim:** tudo o que a pergunta exige (definição, coluna, armadilha) está
+  escrito em `config/descricoes.json`;
+- **nao:** acertar exige conhecimento ou inferência que a documentação não
+  traz (domínio, qualidade dos dados, ambiguidade).
+
+A diferença de acerto entre as duas linhas mostra quanto do desempenho da IA
+vem da documentação preparada e quanto do raciocínio do modelo.
 ```
 python avaliacao/matriz.py --rodada final
 python avaliacao/matriz.py --rodada participantes --arquivo avaliacao/perguntas_participantes.csv --painel avaliacao/dashboard_participantes.csv
@@ -200,7 +225,7 @@ questionário ficam fora, em `dados/`.
 
 | Arquivo | Conteúdo |
 |---|---|
-| `avaliacao/perguntas.csv` | As 20 perguntas do banco, com gabarito, critério e rubrica |
+| `avaliacao/perguntas.csv` | As 20 perguntas do banco, com gabarito, critério, rubrica e `coberta_pela_documentacao` |
 | `avaliacao/perguntas_candidatas.csv` | As 32 candidatas de onde saíram as 20 |
 | `avaliacao/BANCO_DE_PERGUNTAS.md` | Tipos, critérios, tolerâncias, armadilhas e gabaritos |
 | `avaliacao/dashboard.csv` | Ficha do painel (A6) |

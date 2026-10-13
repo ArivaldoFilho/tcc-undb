@@ -6,8 +6,18 @@ Uso:
         --painel avaliacao/dashboard_participantes.csv
 
 Junta o <rodada>_resumo.csv (Indaga, depois da revisão manual) com a ficha do
-painel e gera avaliacao/resultados/matriz_<rodada>.csv, com uma linha por tipo
-(A, B, C, D) e uma linha "todos":
+painel e gera avaliacao/resultados/matriz_<rodada>.csv. Linhas:
+
+    uma por tipo (A, B, C, D), com cobertura "todas";
+    uma por valor de coberta_pela_documentacao (sim, nao), com tipo "todos";
+    o total ("todos", "todas").
+
+coberta_pela_documentacao (coluna do arquivo de perguntas) diz se tudo o que
+a pergunta exige está escrito em config/descricoes.json. Separar por ela mostra
+quanto do acerto da IA vem da documentação e quanto do raciocínio do modelo.
+Perguntas sem a coluna preenchida ficam como "sem_classificacao".
+
+Colunas:
 
     Indaga  acerto (corretas sobre julgadas, somando as perguntas do tipo),
             consistência média, tempo mediano, custo médio, perguntas com
@@ -48,24 +58,28 @@ def main() -> None:
     parser.add_argument("--painel", type=Path, default=PASTA / "dashboard.csv")
     args = parser.parse_args()
 
-    tipos = {p["id"]: p["tipo"] for p in _ler(args.arquivo)}
+    perguntas = {p["id"]: p for p in _ler(args.arquivo)}
     resumo = _ler(PASTA / "resultados" / f"{args.rodada}_resumo.csv")
     painel = {l["id"]: l for l in _ler(args.painel)}
 
     grupos = defaultdict(list)
     for r in resumo:
-        grupos[tipos[r["pergunta_id"]]].append(r)
-        grupos["todos"].append(r)
+        p = perguntas[r["pergunta_id"]]
+        cobertura = (p.get("coberta_pela_documentacao") or "").strip().lower() or "sem_classificacao"
+        grupos[(p["tipo"], "todas")].append(r)
+        grupos[("todos", cobertura)].append(r)
+        grupos[("todos", "todas")].append(r)
 
+    ordem = [(t, "todas") for t in "ABCD"] + [("todos", c) for c in ("sim", "nao", "sem_classificacao")]
     linhas = []
-    for tipo in [t for t in "ABCD" if t in grupos] + ["todos"]:
-        rs = grupos[tipo]
+    for tipo, cobertura in [g for g in ordem if g in grupos] + [("todos", "todas")]:
+        rs = grupos[(tipo, cobertura)]
         corretas = sum(int(r["corretas"]) for r in rs)
         julgadas = sum(int(r["corretas"]) + int(r["incorretas"]) for r in rs)
         fichas = [painel.get(r["pergunta_id"], {}) for r in rs]
         resp = [(f.get("responde") or "").strip().lower() for f in fichas]
         linhas.append({
-            "tipo": tipo, "perguntas": len(rs),
+            "tipo": tipo, "coberta_pela_documentacao": cobertura, "perguntas": len(rs),
             "ia_acerto_pct": round(100 * corretas / julgadas, 1) if julgadas else "",
             "ia_consistencia_pct": _media([_f(r["consistencia_resultado_pct"]) for r in rs]),
             "ia_tempo_mediano_s": round(statistics.median([_f(r["tempo_mediano_s"]) for r in rs]), 1),

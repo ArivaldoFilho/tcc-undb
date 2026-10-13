@@ -1,1 +1,1 @@
-id,tipo,pergunta,criterio,tolerancia,gabarito_sql,observacao,participante,tipo_autor,tipo_segundo,triagem
+id,tipo,pergunta,criterio,tolerancia,gabarito_sql,coberta_pela_documentacao,observacao,participante,tipo_autor,tipo_segundo,triagem
