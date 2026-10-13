@@ -1,30 +1,40 @@
 """Corrige uma rodada contra o gabarito e calcula as métricas por pergunta.
 
 Uso:
-    python avaliacao/corrigir.py --rodada piloto
+    python avaliacao/corrigir.py --rodada final
+    python avaliacao/corrigir.py --rodada participantes --arquivo avaliacao/perguntas_participantes.csv
 
 Gera, em avaliacao/resultados/:
-    <rodada>_execucoes.csv   uma linha por execução, com a situação da correção
+    <rodada>_execucoes.csv   uma linha por execução, com a correção automática e a final
+    <rodada>_revisao.csv     o que precisa de olhar humano (ver abaixo); é preenchido à mão
     <rodada>_resumo.csv      uma linha por pergunta: acerto, consistência, tempo, custo
 
-Critérios (coluna "criterio" de perguntas.csv, definidos ANTES da coleta):
-    numero   uma linha no resultado e alguma célula numérica igual ao gabarito,
-             dentro da tolerância (absoluta, ou relativa se terminar em %)
-    percentual  como numero, com o gabarito em pontos percentuais (8.11 = 8,11%);
-             aceita a resposta em pontos (8.11) ou em fração (0.0811)
-    lista    alguma coluna do resultado tem exatamente o mesmo conjunto de
-             valores da primeira coluna do gabarito (a ordem não conta)
-    tabela   mesmo multiconjunto de linhas (valores arredondados a 2 casas;
-             a ordem das linhas e das colunas não conta)
-    recusa   correto se a decisão foi sem_dados ou esclarecimento. Se a IA
-             executou SQL e escreveu a explicação, fica "pendente_manual": a
-             explicação pode avisar que falta o dado (ex.: "a base termina em
-             2018"), o que também é correto, e só uma pessoa julga isso.
-    rubrica  fica "pendente_manual" para correção humana
+A unidade avaliada é a resposta final que o usuário lê (resultado e explicação),
+não só o SQL.
 
-Também confere os números citados na narrativa: um número que não aparece no
-resultado é marcado para revisão (possível alucinação na etapa de texto, mesmo
-com o SQL certo).
+Critérios automáticos (coluna "criterio", definidos ANTES da coleta):
+    numero      uma linha no resultado e alguma célula igual ao gabarito, dentro
+                da tolerância (absoluta, ou relativa se terminar em %)
+    percentual  como numero, com o gabarito em pontos percentuais (8.11 = 8,11%);
+                aceita a resposta em pontos (8.11) ou em fração (0.0811)
+    lista       alguma coluna do resultado tem o mesmo conjunto de valores da
+                primeira coluna do gabarito (a ordem não conta)
+    tabela      mesmo multiconjunto de linhas (a ordem não conta)
+    recusa      correto se a decisão foi sem_dados ou esclarecimento; se a IA
+                executou SQL e explicou, vai para revisão (a explicação pode
+                avisar que falta o dado, o que também é correto)
+    rubrica     vai para revisão
+Falha da API depois da nova tentativa do rodar.py: "erro_execucao", fora da
+taxa de acerto.
+
+Revisão manual (<rodada>_revisao.csv). Entram: pendentes (recusa e rubrica),
+incorretos e falhas (reconferir o gabarito antes de contar o erro) e
+explicações com números que não aparecem no resultado. Colunas a preencher:
+    avaliador_1, avaliador_2   correto | incorreto, cada um sem ver o outro
+    veredito_final             correto | incorreto | erro_execucao (consenso)
+    explicacao_errada          sim, se o resultado está certo e o texto errado
+Ao rodar de novo, os vereditos preenchidos substituem a correção automática e o
+que já foi escrito é preservado. A concordância sai de avaliacao/concordancia.py.
 """
 import argparse
 import csv
@@ -73,6 +83,8 @@ def _dentro(valor: float, alvo: float, tolerancia: str) -> bool:
 def corrigir(execucao: dict, pergunta: dict, gabarito: tuple[list, list] | None) -> str:
     criterio = pergunta["criterio"]
     decisao = execucao.get("decisao")
+    if execucao.get("erro_api"):
+        return "erro_execucao"
     if criterio == "recusa":
         if decisao in ("sem_dados", "esclarecimento"):
             return "correto"
@@ -132,13 +144,32 @@ def numeros_sem_correspondencia(narrativa: str | None, linhas: list[list]) -> li
     return suspeitos
 
 
+CAMPOS_REVISAO = ["chave", "id_registro", "pergunta_id", "tipo", "criterio", "repeticao", "situacao_automatica",
+                  "motivo_revisao", "pergunta", "criterio_de_correcao", "resposta_ia", "resultado", "sql",
+                  "numeros_narrativa_a_revisar", "avaliador_1", "avaliador_2", "veredito_final",
+                  "explicacao_errada", "observacao_revisao"]
+PREENCHIDOS = ["avaliador_1", "avaliador_2", "veredito_final", "explicacao_errada", "observacao_revisao"]
+
+
+def _ler_revisao(caminho: Path) -> dict[str, dict]:
+    if not caminho.exists():
+        return {}
+    with caminho.open(encoding="utf-8", newline="") as f:
+        return {l["chave"]: l for l in csv.DictReader(f)}
+
+
+def _ordem(pid: str):
+    return (pid[:1], int(pid[1:]) if pid[1:].isdigit() else 0, pid)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--rodada", required=True)
     parser.add_argument("--arquivo", type=Path, default=PASTA / "perguntas.csv")
     args = parser.parse_args()
 
-    entrada = PASTA / "resultados" / f"{args.rodada}.jsonl"
+    res = PASTA / "resultados"
+    entrada = res / f"{args.rodada}.jsonl"
     if not entrada.exists():
         sys.exit(f"Não encontrei {entrada}")
     execucoes = [json.loads(l) for l in entrada.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -151,58 +182,82 @@ def main() -> None:
         if sql and perguntas[pid]["criterio"] in ("numero", "percentual", "lista", "tabela"):
             gabaritos[pid] = banco.executar_leitura(sql)[:2]
 
-    por_pergunta = defaultdict(list)
-    saida_exec = PASTA / "resultados" / f"{args.rodada}_execucoes.csv"
-    with saida_exec.open("w", encoding="utf-8", newline="") as f:
+    caminho_revisao = res / f"{args.rodada}_revisao.csv"
+    revisao_anterior = _ler_revisao(caminho_revisao)
+    revisao, por_pergunta = [], defaultdict(list)
+    with (res / f"{args.rodada}_execucoes.csv").open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["id_registro", "pergunta_id", "tipo", "repeticao", "decisao", "situacao",
-                    "assinatura_resultado", "n_linhas", "tentativas", "tempo_s", "tokens_entrada",
-                    "tokens_saida", "custo_usd", "numeros_narrativa_a_revisar", "erro", "sql"])
+        w.writerow(["id_registro", "pergunta_id", "tipo", "repeticao", "decisao", "situacao_automatica",
+                    "situacao", "assinatura_resultado", "n_linhas", "tentativas", "tentativas_api", "tempo_s",
+                    "tokens_entrada", "tokens_saida", "custo_usd", "numeros_narrativa_a_revisar", "erro", "sql"])
         for e in execucoes:
             p = perguntas[e["pergunta_id"]]
-            situacao = corrigir(e, p, gabaritos.get(e["pergunta_id"]))
-            assinatura = _assinatura(e.get("linhas") or []) if e.get("decisao") == "sql" and e.get("sucesso") else ""
+            chave = f"{e['pergunta_id']}#{e['repeticao']}"
+            automatica = corrigir(e, p, gabaritos.get(e["pergunta_id"]))
             suspeitos = numeros_sem_correspondencia(e.get("narrativa"), e.get("linhas") or [])
+            anterior = revisao_anterior.get(chave, {})
+            situacao = (anterior.get("veredito_final") or "").strip() or automatica
+            motivos = []
+            if automatica == "pendente_manual":
+                motivos.append("julgamento (recusa ou rubrica)")
+            if automatica in ("incorreto", "falha"):
+                motivos.append("erro: reconferir o gabarito")
+            if suspeitos:
+                motivos.append("números da explicação fora do resultado")
+            if motivos:
+                revisao.append({
+                    "chave": chave, "id_registro": e.get("id"), "pergunta_id": e["pergunta_id"], "tipo": p["tipo"],
+                    "criterio": p["criterio"], "repeticao": e["repeticao"], "situacao_automatica": automatica,
+                    "motivo_revisao": "; ".join(motivos), "pergunta": p["pergunta"],
+                    "criterio_de_correcao": p.get("observacao", ""),
+                    "resposta_ia": e.get("narrativa") or e.get("mensagem") or e.get("erro") or "",
+                    "resultado": json.dumps((e.get("linhas") or [])[:10], ensure_ascii=False, default=str),
+                    "sql": e.get("sql") or "", "numeros_narrativa_a_revisar": "; ".join(suspeitos),
+                    **{c: anterior.get(c, "") for c in PREENCHIDOS},
+                })
+            assinatura = _assinatura(e.get("linhas") or []) if e.get("decisao") == "sql" and e.get("sucesso") else ""
             m = e["metricas"]
-            por_pergunta[e["pergunta_id"]].append({**e, "situacao": situacao, "assinatura": assinatura})
-            w.writerow([e.get("id"), e["pergunta_id"], p["tipo"], e["repeticao"], e.get("decisao"), situacao,
-                        assinatura, e.get("n_linhas"), e.get("tentativas"), round(m["tempo_total_ms"] / 1000, 2),
-                        m["tokens_entrada"], m["tokens_saida"], m["custo_usd"], "; ".join(suspeitos),
-                        e.get("erro") or "", e.get("sql") or ""])
+            por_pergunta[e["pergunta_id"]].append({**e, "situacao": situacao, "assinatura": assinatura,
+                                                   "explicacao_errada": anterior.get("explicacao_errada", "")})
+            w.writerow([e.get("id"), e["pergunta_id"], p["tipo"], e["repeticao"], e.get("decisao"), automatica,
+                        situacao, assinatura, e.get("n_linhas"), e.get("tentativas"), e.get("tentativas_api", 1),
+                        round(m["tempo_total_ms"] / 1000, 2), m["tokens_entrada"], m["tokens_saida"], m["custo_usd"],
+                        "; ".join(suspeitos), e.get("erro") or "", e.get("sql") or ""])
 
-    saida_resumo = PASTA / "resultados" / f"{args.rodada}_resumo.csv"
-    with saida_resumo.open("w", encoding="utf-8", newline="") as f:
+    with caminho_revisao.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=CAMPOS_REVISAO)
+        w.writeheader()
+        w.writerows(revisao)
+
+    with (res / f"{args.rodada}_resumo.csv").open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["pergunta_id", "tipo", "criterio", "execucoes", "corretas", "pendentes_manual", "taxa_acerto_pct",
-                    "consistencia_resultado_pct", "sqls_distintos", "decisoes", "tempo_mediano_s",
-                    "tempo_max_s", "custo_medio_usd"])
-        for pid in sorted(por_pergunta):
-            lista = por_pergunta[pid]
-            p = perguntas[pid]
-            n = len(lista)
-            corretas = sum(x["situacao"] == "correto" for x in lista)
-            pendentes = sum(x["situacao"] == "pendente_manual" for x in lista)
-            corrigiveis = n - pendentes
-            # Consistência: fração das execuções que caiu no resultado (ou na decisão) mais frequente.
-            chaves = [x["assinatura"] or f"decisao:{x.get('decisao')}" for x in lista]
-            consistencia = Counter(chaves).most_common(1)[0][1] / n
-            tempos = [x["metricas"]["tempo_total_ms"] / 1000 for x in lista]
+        w.writerow(["pergunta_id", "tipo", "criterio", "execucoes", "corretas", "incorretas", "pendentes_manual",
+                    "erros_execucao", "taxa_acerto_pct", "consistencia_resultado_pct", "sqls_distintos", "decisoes",
+                    "explicacao_errada", "tempo_mediano_s", "tempo_max_s", "custo_medio_usd"])
+        for pid in sorted(por_pergunta, key=_ordem):
+            lista, p = por_pergunta[pid], perguntas[pid]
+            validas = [x for x in lista if x["situacao"] != "erro_execucao"]
+            corretas = sum(x["situacao"] == "correto" for x in validas)
+            pendentes = sum(x["situacao"] == "pendente_manual" for x in validas)
+            julgadas = len(validas) - pendentes
+            # Consistência: fração das execuções no resultado (ou na decisão) mais frequente.
+            chaves = [x["assinatura"] or f"decisao:{x.get('decisao')}" for x in validas]
+            consistencia = Counter(chaves).most_common(1)[0][1] / len(validas) if validas else None
+            tempos = [x["metricas"]["tempo_total_ms"] / 1000 for x in validas] or [0]
             custos = [x["metricas"]["custo_usd"] or 0 for x in lista]
             w.writerow([
-                pid, p["tipo"], p["criterio"], n, corretas, pendentes,
-                round(100 * corretas / corrigiveis, 1) if corrigiveis else "",
-                round(100 * consistencia, 1),
-                len({(x.get("sql") or "").strip() for x in lista if x.get("sql")}),
-                "; ".join(f"{k}={v}" for k, v in Counter(x.get("decisao") for x in lista).items()),
-                round(statistics.median(tempos), 2), round(max(tempos), 2),
-                round(statistics.mean(custos), 6),
+                pid, p["tipo"], p["criterio"], len(lista), corretas, julgadas - corretas, pendentes,
+                len(lista) - len(validas), round(100 * corretas / julgadas, 1) if julgadas else "",
+                round(100 * consistencia, 1) if consistencia is not None else "",
+                len({(x.get("sql") or "").strip() for x in validas if x.get("sql")}),
+                "; ".join(f"{k}={v}" for k, v in Counter(x.get("decisao") for x in validas).items()),
+                sum((x["explicacao_errada"] or "").strip().lower() == "sim" for x in lista),
+                round(statistics.median(tempos), 2), round(max(tempos), 2), round(statistics.mean(custos), 6),
             ])
 
-    print(f"Execuções corrigidas: {saida_exec}")
-    print(f"Resumo por pergunta:  {saida_resumo}")
     pend = sum(x["situacao"] == "pendente_manual" for v in por_pergunta.values() for x in v)
-    if pend:
-        print(f"{pend} execuções com critério 'rubrica' aguardam correção manual na coluna 'situacao'.")
+    print(f"Resultados em {res} ({args.rodada}_execucoes, _revisao, _resumo).")
+    print(f"{len(revisao)} execuções para revisão; {pend} ainda sem veredito final.")
 
 
 if __name__ == "__main__":

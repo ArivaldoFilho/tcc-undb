@@ -1,3 +1,6 @@
+> **Plano original de 11/10/2026, mantido como histórico.** O fluxo vigente de coleta está em
+> [AVALIACAO.md](AVALIACAO.md) e as decisões posteriores em [DECISOES.md](DECISOES.md).
+
 # TCC: análise em dashboard x análise por IA generativa em linguagem natural
 
 Briefing para continuar o trabalho em outra conversa. Estado em 11 out. 2026.

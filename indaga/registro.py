@@ -41,3 +41,13 @@ def gravar(r: dict, *, origem, rodada, pergunta_id, repeticao, participante) -> 
 
 def para_json(r: dict) -> str:
     return json.dumps(r, ensure_ascii=False, default=str)
+
+
+def consultas_24h(origem: str) -> int:
+    """Execuções gravadas nas últimas 24 horas para uma origem (teto da interface pública)."""
+    with banco.conexao_admin() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT count(*) FROM indaga.execucoes WHERE origem = %s AND criado_em > now() - interval '24 hours'",
+            (origem,),
+        )
+        return cur.fetchone()[0]

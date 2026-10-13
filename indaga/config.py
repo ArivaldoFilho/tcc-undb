@@ -52,7 +52,9 @@ TIMEOUT_SQL_SEGUNDOS = 20
 MAX_LINHAS_NARRATIVA = 50       # linhas do resultado enviadas ao modelo na narrativa
 
 # ── Acesso ────────────────────────────────────────────────────────────────
-# Se preenchida, a interface pede essa senha (útil no estudo com usuários).
+# Se preenchida, a interface pede essa senha.
 SENHA_ACESSO = _env("INDAGA_SENHA_ACESSO")
+# Teto de consultas da interface (/) nas últimas 24 horas. Não afeta a avaliação.
+LIMITE_DIARIO = int(_env("INDAGA_LIMITE_DIARIO", "100"))
 
 ARQUIVO_DESCRICOES = RAIZ / "config" / "descricoes.json"

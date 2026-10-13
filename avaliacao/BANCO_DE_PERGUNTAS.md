@@ -2,12 +2,13 @@
 
 - `perguntas_candidatas.csv`: as 32 candidatas (26 iniciais e 6 armadilhas).
 - `perguntas.csv`: a **seleção final de 20** (4 A, 6 B, 6 C e 4 D). É lido por
-  `rodar.py`, `corrigir.py` e pelo estudo com usuários.
+  `rodar.py` e `corrigir.py` (Frente A).
 - Para trocar uma pergunta, copie a linha das candidatas para `perguntas.csv`
   (e para `dashboard.csv`) e só depois congele os dois arquivos.
-- `dashboard.csv` é a ficha da avaliação no painel (Solução A). As colunas
-  `*_previsto` justificam o tipo de cada pergunta; as demais são preenchidas
-  na Fase 5.
+- `dashboard.csv` é a ficha do painel (Solução A). As colunas `*_previsto`
+  justificam o tipo de cada pergunta; `responde`, `passos`, `valor_lido` e
+  `esforco_adaptacao` (0 a 3) são preenchidas na Frente A (ver
+  `docs/AVALIACAO.md`, A6).
 
 ## Como as perguntas foram classificadas
 
@@ -99,7 +100,7 @@ seleção.
 
 | Tipo | Perguntas | Por que estas |
 |---|---|---|
-| A | A1, A2, A5, A6 | Número, lista e percentual; A1 e A2 estão no estudo |
+| A | A1, A2, A5, A6 | Número, lista e percentual |
 | B | B1, B3, B4, B5, B7, B8 | Filtros combinados, definições (B3, B5), qualidade de dados (B7) e domínio (B8) |
 | C | C1, C3, C4, C8, C9, C11 | Cruzamento analítico (C1), tabela fora do painel (C3), recompra (C4) e três armadilhas |
 | D | D1, D2, D3, D5 | Dado inexistente (D1, D3), data fora da base (D2) e ambiguidade (D5) |
@@ -120,16 +121,8 @@ hipótese.
 4. Rode um piloto curto para conferir o formato, com 1 repetição e só algumas
    perguntas:
    ```
-   .venv\Scripts\python avaliacao\rodar.py --rodada piloto --repeticoes 1 --ids A1,B2,C4,D1
+   .venv\Scripts\python avaliacao\rodar.py --rodada piloto --repeticoes 1 --ids A1,B3,C4,D1
    .venv\Scripts\python avaliacao\corrigir.py --rodada piloto
    ```
    O piloto não entra nos resultados e não deve levar a ajustes de prompt
    voltados a essas perguntas.
-
-## Para a Fase 6 (estudo com usuários)
-
-O desenho intrassujeito precisa de **dois conjuntos equivalentes**, um por
-ferramenta. Quando as perguntas finais estiverem escolhidas, monte os
-conjuntos X e Y com o mesmo número de perguntas de cada tipo e dificuldade
-parecida. Exemplo de par: B2 (ticket RJ 2018) em X e uma variação com outra
-UF e outro ano em Y.

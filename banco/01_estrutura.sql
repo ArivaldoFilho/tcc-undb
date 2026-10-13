@@ -20,7 +20,7 @@ create table if not exists indaga.execucoes (
     rodada          text,                   -- nome da rodada de avaliação
     pergunta_id     text,                   -- id no banco de perguntas (A1, C3...)
     repeticao       int,
-    participante    text,                   -- código anônimo no estudo com usuários
+    participante    text,                   -- não usado na avaliação atual (coluna mantida)
     pergunta        text not null,
     decisao         text,                   -- sql | sem_dados | esclarecimento | conversa
     sql_final       text,

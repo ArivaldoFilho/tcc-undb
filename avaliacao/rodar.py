@@ -6,8 +6,13 @@ Uso:
 
 As repetições são intercaladas (todas as perguntas na repetição 1, depois todas
 na 2...), para que uma instabilidade momentânea da API não caia toda sobre a
-mesma pergunta. Cada execução vai para indaga.execucoes e também para
-avaliacao/resultados/<rodada>.jsonl.
+mesma pergunta. Cada execução é uma sessão nova, sem histórico. Vai para
+indaga.execucoes e também para avaliacao/resultados/<rodada>.jsonl, com a data
+e o identificador do modelo devolvido pela API.
+
+Falha da API (rede, sobrecarga, limite): uma nova tentativa. Se falhar de
+novo, a execução fica marcada com erro_api e o corrigir.py a conta como "erro
+de execução", não como resposta errada.
 
 A rodada para se a configuração mudar no meio (config_hash diferente) ou se o
 log não puder ser gravado.
@@ -16,6 +21,7 @@ import argparse
 import csv
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 PASTA = Path(__file__).resolve().parent
@@ -63,11 +69,21 @@ def main() -> None:
         for rep in range(1, args.repeticoes + 1):
             for p in perguntas:
                 feitas += 1
-                r = pipeline.responder(
-                    p["pergunta"], origem="avaliacao", gerar_narrativa=not args.sem_narrativa,
-                    rodada=args.rodada, pergunta_id=p["id"], repeticao=rep,
-                )
+                def executar():
+                    return pipeline.responder(
+                        p["pergunta"], origem="avaliacao", gerar_narrativa=not args.sem_narrativa,
+                        rodada=args.rodada, pergunta_id=p["id"], repeticao=rep,
+                    )
+                r = executar()
+                r["tentativas_api"] = 1
+                if r["erro_api"]:
+                    print(f"      falha da API ({(r['erro'] or '')[:60]}); nova tentativa")
+                    erro_anterior = r["erro"]
+                    r = executar()
+                    r["tentativas_api"], r["erro_api_anterior"] = 2, erro_anterior
                 r["pergunta_id"], r["repeticao"], r["rodada"] = p["id"], rep, args.rodada
+                r["executado_em"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+                r["modelos_api"] = sorted({e["modelo"] for e in r["metricas"]["etapas"] if e.get("modelo")})
                 arq.write(registro.para_json(r) + "\n")
                 arq.flush()
 

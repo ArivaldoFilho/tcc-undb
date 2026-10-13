@@ -1,4 +1,4 @@
-id,tipo,pergunta,responde_previsto,caminho_previsto,passos_previstos,responde,passos,valor_lido,tempo_s,adaptacao_necessaria,observacao
+id,tipo,pergunta,responde_previsto,caminho_previsto,passos_previstos,responde,passos,valor_lido,tempo_s,esforco_adaptacao,observacao
 A1,A,Qual foi o faturamento total de 2017?,sim,Visão geral > Ano = 2017 > cartão Faturamento,1,,,,,,
 A2,A,Quantos pedidos foram feitos em 2018?,sim,Visão geral > Ano = 2018 > cartão Pedidos,1,,,,,,
 A5,A,Quais são as 5 categorias de produto com maior faturamento?,sim,Vendas > gráfico Faturamento por categoria,0,,,,,,

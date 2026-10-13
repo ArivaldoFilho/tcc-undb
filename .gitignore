@@ -5,12 +5,8 @@ __pycache__/
 *.pyc
 .claude/settings.local.json
 
-# Dados do Olist (baixar do Kaggle; ver README)
+# Dados brutos: CSVs do Olist (Kaggle) e respostas do questionário
 dados/
-
-# Resultados das rodadas (gerados pelos scripts)
-avaliacao/resultados/*
-!avaliacao/resultados/.gitkeep
 
 # Texto do TCC (não publicado) e arquivos temporários do Word
 *.docx

@@ -31,6 +31,7 @@ class Chamada:
     ms: int
     stop_reason: str
     request_id: str | None
+    modelo: str | None = None
 
     def como_dict(self) -> dict:
         return {
@@ -40,6 +41,7 @@ class Chamada:
             "ms": self.ms,
             "stop_reason": self.stop_reason,
             "request_id": self.request_id,
+            "modelo": self.modelo,
         }
 
 
@@ -85,6 +87,7 @@ def chamar(
         ms=ms,
         stop_reason=resposta.stop_reason or "",
         request_id=getattr(resposta, "_request_id", None),
+        modelo=getattr(resposta, "model", None),
     )
 
 

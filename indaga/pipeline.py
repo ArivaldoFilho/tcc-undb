@@ -11,6 +11,8 @@ import hashlib
 import json
 import time
 
+import anthropic
+
 from . import banco, config, esquema, llm, prompts, registro
 
 
@@ -87,7 +89,7 @@ def responder(
         "pergunta": pergunta, "decisao": None, "sql": None, "mensagem": None,
         "suposicoes": [], "colunas": [], "linhas": [], "n_linhas": 0, "truncado": False,
         "narrativa": None, "sucesso": False, "erro": None, "tentativas": 0,
-        "sqls_tentados": [],
+        "sqls_tentados": [], "erro_api": False,
     }
 
     try:
@@ -141,6 +143,7 @@ def responder(
         r["erro"] = str(exc)
     except Exception as exc:
         r["erro"] = f"{type(exc).__name__}: {exc}"
+        r["erro_api"] = isinstance(exc, anthropic.APIError)
 
     tokens_entrada = sum(c.tokens_entrada for c in chamadas)
     tokens_saida = sum(c.tokens_saida for c in chamadas)
